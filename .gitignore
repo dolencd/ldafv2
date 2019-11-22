@@ -4,3 +4,4 @@ _gsdata_/
 node_modules/
 pnpm-lock.yaml
 package-lock.json
+tsconfig.tsbuildinfo
