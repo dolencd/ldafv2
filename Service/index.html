@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+
+            class base {
+                    
+                    constructor(){
+                        const neki = 98;
+                        this.seneki = 0;
+                    }
+                    a(s){
+                        console.log("0 " + s)
+                    }
+                }
+
+            const classes = [
+                (input) => {
+                    return class a extends input {
+                    
+                    constructor(){
+                        super()
+                        const neki = 98;
+                        this.seneki = 1;
+                    }
+                    a(s){
+                        if(super.a) super.a.apply(this, arguments);
+                        console.log("a " + s)
+                    }
+                }},
+                (input) => {
+                    return class b extends input {
+                    
+                    constructor(){
+                        super()
+                        const neki = 98;
+                        this.seneki = 2;
+                    }
+                    a(s){
+                        if(super.a) super.a.apply(this, arguments);
+                        console.log("b " + s)
+                    }
+                }},
+                (input) => {
+                    return class c extends input {
+                    
+                    constructor(){
+                        super()
+                        const neki = 98;
+                        this.seneki = 3;
+                    }
+                    a(s){
+                        if(super.a) super.a.apply(this, arguments);
+                        console.log("c " + s)
+                    }
+                }},
+                (input) => {
+                    return class d extends input {
+                    
+                    constructor(){
+                        super()
+                        const neki = 98;
+                        this.seneki = 4;
+                    }
+                    a(s){
+                        if(super.a) super.a.apply(this, arguments);
+                        console.log("d " + s)
+                    }
+                
+                }}
+            ]
+
+            let all = classes.reduce((total, currentValue, index, arr) => {
+                return currentValue(total);
+            }, base)
+
+            let out = new all();
+
+            out.a("asda");
+
+    
+
+            </script>
+    </head>
+    <body>
+
+    </body>
+</html>
