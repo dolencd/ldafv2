@@ -1,7 +1,9 @@
 import {Server} from "ws";
 import ServerTranscoder from "./ServerTranscoder";
 
-const serverTranscoder: ServerTranscoder = new ServerTranscoder(parseInt(process.env.TRANSCODER_TYPELEN) || 1, parseInt(process.env.TRANSCODER_SEQLEN) || 1)
+const serverTranscoder: ServerTranscoder = new ServerTranscoder(
+    parseInt(process.env.TRANSCODER_TYPELEN) || 1,
+    parseInt(process.env.TRANSCODER_SEQLEN) || 1)
 
 const wsServer = new Server({
     clientTracking: true,
@@ -13,7 +15,7 @@ wsServer.on("connection", (socket, request) => {
 })
 
 wsServer.on("listening", () => {
-    
+    console.log("WS listening on" + process.env.WS_PORT)
 })
 
 wsServer.on("error", (error) => {
