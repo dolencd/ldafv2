@@ -5,7 +5,16 @@ import uuid from "uuid";
 
 interface MQDriverOptions {
     address: string;
-    
+    reqRes: boolean;
+}
+
+interface RequestObject {
+    corrId: string;
+    responsePromise: Promise<object>;
+    promiseResolve: Function;
+    promiseReject: Function;
+    requestQueue: string;
+    reqParams: object
 }
 
 /*
@@ -49,34 +58,56 @@ export default class MQDriver extends EventEmitter{
         this.conn = await amqplib.connect(this.options.address);
         this.channel = await this.conn.createChannel();
 
-
+        if(this.options.reqRes){
+            this.pendingRequests = {};
+            await this.createReceiveQueue();
+        }
     }
 
     private async createReceiveQueue(){
+        const gotResponse = (msg: amqplib.ConsumeMessage) => {
+            if(!this.pendingRequests[msg.properties.correlationId]){
+                console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
+                return;
+            }
+    
+            const requestObj = this.pendingRequests[msg.properties.correlationId];
+            delete this.pendingRequests[msg.properties.correlationId];
+            let decodedResponse
+            try {
+                decodedResponse = msg.content.toJSON();
+            }
+            catch(e){
+                console.error("failed to decode message content", msg);
+            }
+            
+            requestObj.responsePromise.resolve(decodedResponse);
+        }
+
         this.receiveDirectQueue = await this.channel.assertQueue('', {
             exclusive: true,
             durable: true
         })
-        this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, this.gotResponse, {})
+        this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
     }
 
-    private gotResponse(msg: amqplib.ConsumeMessage){
-        if(!this.pendingRequests[msg.properties.correlationId]){
-            console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
-            return;
+    private async sendRequest(serviceName: string, reqParams: object){
+        let promiseResolve, promiseReject
+        let requestObj: RequestObject = {
+            requestQueue: serviceName,//TODO: get proper queue name
+            corrId: uuid(),
+            reqParams,
+            responsePromise: new Promise((resolve, reject) => {
+                promiseResolve = resolve;
+                promiseReject = reject;
+            }),
+            promiseReject,
+            promiseResolve
+
         }
 
-        const requestObj = this.pendingRequests[msg.properties.correlationId];
-        delete this.pendingRequests[msg.properties.correlationId];
-        let decodedResponse
-        try {
-            decodedResponse = msg.content.toJSON();
-        }
-        catch(e){
-            console.error("failed to decode message content", msg);
-        }
-        
-        requestObj.responsePromise.resolve(decodedResponse);
+        this.pendingRequests[requestObj.corrId] = requestObj;
+
     }
-    
+
 }
