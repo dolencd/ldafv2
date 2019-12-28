@@ -30,7 +30,7 @@ export default class MQDriver extends EventEmitter{
         super()
         this.options = options;
 
-        if(typeof this.options.serviceName !== typeof ""){
+        if(typeof this.options.serviceName !== "string"){
             console.error("invalid serviceName", this.options.serviceName);
         }
     }

@@ -86,7 +86,7 @@ export default class MQDriver extends EventEmitter{
             exclusive: true,
             durable: true
         })
-        this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
+        this.receiveDirectConsume = this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
     }
 
     async sendRequest(serviceName: string, reqParams: object){

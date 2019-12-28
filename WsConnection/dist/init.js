@@ -13,6 +13,7 @@ const wsServer = new ws_1.Server({
 wsServer.on("connection", (socket, request) => {
 });
 wsServer.on("listening", () => {
+    console.log("WS listening on" + process.env.WS_PORT);
 });
 wsServer.on("error", (error) => {
 });
