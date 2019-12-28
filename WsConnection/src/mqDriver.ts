@@ -5,7 +5,7 @@ import uuid from "uuid";
 
 interface MQDriverOptions {
     address: string;
-    reqRes: boolean;
+    prefetch: number;
 }
 
 interface RequestObject {
@@ -57,6 +57,7 @@ export default class MQDriver extends EventEmitter{
     async init(){
         this.conn = await amqplib.connect(this.options.address);
         this.channel = await this.conn.createChannel();
+        await this.channel.prefetch(this.options.prefetch || 10);
         await this.createReceiveQueue();
 
     }
@@ -104,7 +105,7 @@ export default class MQDriver extends EventEmitter{
         }
 
         try{
-            let ok = this.channel.publish(`s:${serviceName}`,"" , Buffer.from(JSON.stringify(reqParams)), {
+            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(JSON.stringify(reqParams)), {
                 deliveryMode: true,
                 timestamp: Date.now(),
                 correlationId: requestObj.correlationId,
