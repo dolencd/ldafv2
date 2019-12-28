@@ -1,6 +1,6 @@
 {
   "name": "dbdriver",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "HTTP API for LDAFv2 DB",
   "main": "index.js",
   "scripts": {
