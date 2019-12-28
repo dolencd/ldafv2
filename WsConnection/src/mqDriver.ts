@@ -9,7 +9,7 @@ interface MQDriverOptions {
 }
 
 interface RequestObject {
-    corrId: string;
+    correlationId: string;
     responsePromise: Promise<object>;
     promiseResolve: Function;
     promiseReject: Function;
@@ -57,11 +57,8 @@ export default class MQDriver extends EventEmitter{
     async init(){
         this.conn = await amqplib.connect(this.options.address);
         this.channel = await this.conn.createChannel();
+        await this.createReceiveQueue();
 
-        if(this.options.reqRes){
-            this.pendingRequests = {};
-            await this.createReceiveQueue();
-        }
     }
 
     private async createReceiveQueue(){
@@ -91,11 +88,12 @@ export default class MQDriver extends EventEmitter{
         this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
     }
 
-    private async sendRequest(serviceName: string, reqParams: object){
+    async sendRequest(serviceName: string, reqParams: object){
+
         let promiseResolve, promiseReject
         let requestObj: RequestObject = {
             requestQueue: serviceName,//TODO: get proper queue name
-            corrId: uuid(),
+            correlationId: uuid(),
             reqParams,
             responsePromise: new Promise((resolve, reject) => {
                 promiseResolve = resolve;
@@ -103,10 +101,25 @@ export default class MQDriver extends EventEmitter{
             }),
             promiseReject,
             promiseResolve
-
         }
 
-        this.pendingRequests[requestObj.corrId] = requestObj;
+        try{
+            let ok = this.channel.publish(`s:${serviceName}`,"" , Buffer.from(JSON.stringify(reqParams)), {
+                deliveryMode: true,
+                timestamp: Date.now(),
+                correlationId: requestObj.correlationId,
+                replyTo: this.receiveDirectQueue.queue
+            })
+            if(!ok){
+                console.log("publish returned false");
+            }
+        }
+        catch (e) {
+            console.error("channel publish error", e)
+        }
+
+        
+        this.pendingRequests[requestObj.correlationId] = requestObj;
 
     }
 
