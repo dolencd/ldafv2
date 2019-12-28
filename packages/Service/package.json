@@ -1,10 +1,10 @@
 {
-  "name": "dockertest",
+  "name": "service",
   "version": "0.0.1",
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/test.js",
     "start": "node src/index.js"
   },
   "author": "",

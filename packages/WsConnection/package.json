@@ -23,7 +23,8 @@
   "description": "WebSocket server for LDAFv2",
   "main": "index.js",
   "scripts": {
-    "test": "node test.js"
+    "build": "tsc",
+    "test": "node dist/test.js"
   },
   "author": "Dejan Dolenc",
   "license": "ISC"
