@@ -1,0 +1,11 @@
+{
+    "name": "web3",
+    "dependencies": [
+        {
+            "name": "web3"
+        },
+        {
+            "name": "eventemitter3"
+        }
+    ]
+}
