@@ -1,38 +1,26 @@
 const eventemiter3 = require("eventemitter3");
+const Redis = require("ioredis");
 
-function provideRedis(){
-    if(process.env.TEST === "true"){
-        console.log(
-            "using mock redis. TESTING USE ONLY"
-        );
-
-        let Redis = require("ioredis-mock");
-        return new Redis({
-            showFriendlyErrorStack: true,
-        })
-
-    }
-
-    //TODO: use yup to test inputs
-
-    let Redis = require("ioredis");
-    return new Redis({
-        port: process.env.REDIS_PORT, 
-        host: process.env.REDIS_HOST,
-        password: process.env.REDIS_PASSWORD || null,
-        showFriendlyErrorStack: true
-        //TODO: redis options
-    });
-
-}
 
 module.exports = class RedisDriver {
     constructor(){
-        this.redis = provideRedis();
+        this.host = process.env.REDIS_HOST || "localhost";
+        this.port = process.env.REDIS_PORT || 6379;
+
+        console.log(`redis host:${this.host} port:${this.port}`);
+
+        this.redis = new Redis({
+            port: process.env.REDIS_PORT, 
+            host: process.env.REDIS_HOST,
+            password: process.env.REDIS_PASSWORD || null,
+            showFriendlyErrorStack: true
+            //TODO: redis options
+        });
+
+        
     }
 
     async readData(key){
-
         return this.redis.get(key)
 
     }

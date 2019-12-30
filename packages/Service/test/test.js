@@ -1,13 +1,6 @@
 console.log("start")
 const assert = require("assert");
-
-process.env.TEST = true;
-
 const testRedis = async () => {
-
-    console.log(process.env.TEST)
-    assert.equal(process.env.TEST , "true", "TEST env variable should be true when running tests");
-
     //TEST REDIS DRIVER
     const RedisDriver = require("../src/redisDriver")
     // assert.equal(typeof RedisDriver, "object", "RedisDriver must return object");

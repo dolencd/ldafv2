@@ -1,11 +1,14 @@
 services:
   - docker
+  - redis
+  - rabbitmq
 language: node_js
 node_js:
   - 12
 env:
   global:
-    - DOCKER_IMAGE=dolencd/rso-test:1.0.0-SNAPSHOT-$TRAVIS_JOB_NUMBER
+    - REDIS_HOST=localhost
+    - REDIS_PORT=6379
 
 install:
   - npm i -g typescript lerna
