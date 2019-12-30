@@ -10,13 +10,13 @@ export class Client extends EventEmitter {
     private _id: string;
     private _serverTranscoder: ServerTranscoder;
     private _socket: WebSocket;
-    private _services: Array<string>;
+    private _services: Array<object>
 
 
-    constructor(socket: WebSocket, request: IncomingMessage){
+    constructor(socket: WebSocket, services: Array<object>, request: IncomingMessage){
         super()
 
-        
+        this._services = services;
 
         this._id = uuid();
         this._socket = socket;

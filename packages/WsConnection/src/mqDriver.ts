@@ -10,11 +10,16 @@ interface MQDriverOptions {
 
 interface RequestObject {
     correlationId: string;
-    responsePromise: Promise<object>;
+    responsePromise: Promise<any>;
     promiseResolve: Function;
     promiseReject: Function;
     requestQueue: string;
     reqParams: object
+}
+
+export interface ServiceInfo {
+    name: string,
+    typeCount: number
 }
 
 /*
@@ -39,7 +44,7 @@ ws verzija
 
 */
 
-export default class MQDriver extends EventEmitter{
+export class MQDriver extends EventEmitter{
     options: MQDriverOptions;
 
     private conn: amqplib.Connection;
@@ -130,6 +135,11 @@ export default class MQDriver extends EventEmitter{
 
         return requestObj.responsePromise
 
+    }
+
+    async getServiceInfo(serviceName: string){
+        let res: ServiceInfo = await this.sendRequest(serviceName, {method: "info"});
+        return res;
     }
 
 }

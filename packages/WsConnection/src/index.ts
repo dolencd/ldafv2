@@ -1,6 +1,6 @@
 import * as Ws from "ws";
 import {Client} from "./Client"
-import MQDriver from "./mqDriver"
+import {MQDriver, ServiceInfo} from "./mqDriver"
 import * as querystring from "querystring"
 
 
@@ -31,7 +31,7 @@ const main = async () => {
         }
 
 
-        let services: Array<object>;
+        let services: Array<ServiceInfo>;
         try {
             services = await Promise.all(serviceNames.map((serviceName: string) => {
                 return mqDriver.sendRequest(serviceName, {
@@ -44,7 +44,7 @@ const main = async () => {
             return
         }
 
-        const client = new Client(socket, request)
+        const client = new Client(socket, services, request)
     })
 
 
