@@ -13,10 +13,12 @@ env:
 install:
   - npm i -g typescript lerna
   - lerna bootstrap
+  - lerna run compile
 
 script: 
-  - lerna run build
   - lerna run test
+  - lerna run build
+
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
