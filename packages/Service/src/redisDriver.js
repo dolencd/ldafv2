@@ -28,4 +28,8 @@ module.exports = class RedisDriver {
     async writeData(key, data){
         return this.redis.set(key, data);
     }
+
+    async close(){
+        return this.redis.disconnect();
+    }
 }

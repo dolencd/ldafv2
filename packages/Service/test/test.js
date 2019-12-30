@@ -16,6 +16,7 @@ const testRedis = async () => {
 
     assert.equal(await redisReadPromise, 123, "value read from redis is not the same as was written");
 
+    await redisDriver.close();
 }
 
 
