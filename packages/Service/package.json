@@ -6,8 +6,8 @@
   "scripts": {
     "test": "node dist/test.js",
     "start": "node index.js",
-    "build": "docker build -t \"ldafv2/Service\" .",
-    "push": "docker push \"ldafv2/Service\""
+    "build": "docker build -t \"ldafv2/service\"/$TRAVIS_JOB_NUMBER .",
+    "push": "docker push \"ldafv2/service\"/$TRAVIS_JOB_NUMBER"
   },
   "author": "",
   "license": "ISC",
