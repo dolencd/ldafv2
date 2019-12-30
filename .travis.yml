@@ -2,7 +2,7 @@ services:
   - docker
 language: node_js
 node_js:
-  - lts/12
+  - 12
 env:
   global:
     - DOCKER_IMAGE=dolencd/rso-test:1.0.0-SNAPSHOT-$TRAVIS_JOB_NUMBER
