@@ -8,7 +8,7 @@ env:
     - DOCKER_IMAGE=dolencd/rso-test:1.0.0-SNAPSHOT-$TRAVIS_JOB_NUMBER
 
 install:
-  - npm i -g typescript
+  - npm i -g typescript lerna
   - lerna bootstrap
 
 script: 
