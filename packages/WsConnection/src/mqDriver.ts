@@ -4,8 +4,8 @@ import EventEmitter from "eventemitter3";
 import uuid from "uuid";
 
 interface MQDriverOptions {
-    address: string;
-    prefetch: number;
+    address?: string;
+    prefetch?: number;
 }
 
 interface RequestObject {
@@ -49,17 +49,18 @@ export default class MQDriver extends EventEmitter{
     private receiveDirectConsume: amqplib.Replies.Consume;
     private pendingRequests: any; //TODO: use generated uuid as key in typescript???
 
-    constructor(options: MQDriverOptions){
+    constructor(options?: MQDriverOptions){
         super()
         this.options = options;
     }
 
     async init(){
-        this.conn = await amqplib.connect(this.options.address);
+        this.conn = await amqplib.connect(this.options.address || process.env.RABBITMQ_ADDRESS);
         this.channel = await this.conn.createChannel();
         await this.channel.prefetch(this.options.prefetch || 10);
         await this.createReceiveQueue();
 
+        return this;
     }
 
     private async createReceiveQueue(){
@@ -73,13 +74,18 @@ export default class MQDriver extends EventEmitter{
             delete this.pendingRequests[msg.properties.correlationId];
             let decodedResponse
             try {
-                decodedResponse = msg.content.toJSON();
+                decodedResponse = JSON.parse(msg.content.toString());
             }
             catch(e){
                 console.error("failed to decode message content", msg);
             }
             
-            requestObj.responsePromise.resolve(decodedResponse);
+            if(decodedResponse.error){
+                requestObj.promiseReject(decodedResponse.error);
+            }
+            else {
+                requestObj.promiseResolve(decodedResponse);
+            }
         }
 
         this.receiveDirectQueue = await this.channel.assertQueue('', {
@@ -121,6 +127,8 @@ export default class MQDriver extends EventEmitter{
 
         
         this.pendingRequests[requestObj.correlationId] = requestObj;
+
+        return requestObj.responsePromise
 
     }
 
