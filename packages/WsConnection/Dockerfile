@@ -2,7 +2,7 @@ FROM node:12
 
 WORKDIR /app
 COPY package.json package.json
-COPY /src .
+COPY /dist .
 
 RUN npm install --loglevel notice --production
 

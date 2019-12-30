@@ -1,0 +1,20 @@
+services:
+  - docker
+language: node_js
+node_js:
+  - lts/12
+env:
+  global:
+    - DOCKER_IMAGE=dolencd/rso-test:1.0.0-SNAPSHOT-$TRAVIS_JOB_NUMBER
+
+install:
+  - npm i -g typescript
+  - lerna bootstrap
+
+script: 
+  - lerna run test
+  - lerna run build
+
+after_success:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - lerna run push
