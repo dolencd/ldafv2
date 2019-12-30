@@ -1,9 +1,7 @@
 _gsdata_/
 .vscode/
 
-
 dist/
 node_modules/
-pnpm-lock.yaml
-package-lock.json
 tsconfig.tsbuildinfo
+lerna-debug.log
