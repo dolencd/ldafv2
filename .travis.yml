@@ -15,8 +15,8 @@ install:
   - lerna bootstrap
 
 script: 
-  - lerna run test
   - lerna run build
+  - lerna run test
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
