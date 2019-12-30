@@ -25,8 +25,8 @@
   "scripts": {
     "compile": "tsc",
     "test": "node dist/test.js",
-    "build": "docker build -t dolencd/ldafv2ws/$TRAVIS_JOB_NUMBER .",
-    "push": "docker push dolencd/ldafv2ws/$TRAVIS_JOB_NUMBER"
+    "build": "docker build -t dolencd/ldafv2ws .",
+    "push": "docker push dolencd/ldafv2ws"
   },
   "author": "Dejan Dolenc",
   "license": "ISC"
