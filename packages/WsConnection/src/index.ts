@@ -1,8 +1,11 @@
 import * as Ws from "ws";
-import {Client} from "./Client"
+import {Client, MessageType} from "./Client"
 import {MQDriver, ServiceInfo} from "./mqDriver"
 import * as querystring from "querystring"
 
+const clients: any = {
+
+}
 
 const main = async () => {
 
@@ -17,7 +20,7 @@ const main = async () => {
 
         const queryParams = querystring.parse(request.url.substr(1));
 
-        let serviceNames;
+        let serviceNames: Array<string>;
 
         if(Array.isArray(queryParams.s)){
             serviceNames = queryParams.s;
@@ -35,6 +38,8 @@ const main = async () => {
         try {
             services = await Promise.all(serviceNames.map((serviceName: string) => {
                 return mqDriver.sendRequest(serviceName, {
+                    method: "serviceInfo",
+                    params: {}
                     //TODO: kaksni parametri??
                 })
             }))
@@ -45,6 +50,18 @@ const main = async () => {
         }
 
         const client = new Client(socket, services, request)
+        if(clients[client.id]){
+            console.error("uuid collision! closing client", clients, client)
+            client.close()
+            return;
+        }
+        clients[client.id] = client;
+        client.once("close", () => {
+            delete clients[client.id];
+        })
+        client.on("message", (service: string, message: {payload: Buffer, type: number}) => {
+            mqDriver.sendRequest(service, message); //TODO: handle response
+        }) 
     })
 
 

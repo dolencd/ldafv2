@@ -29,6 +29,7 @@ export default class MQDriver extends EventEmitter{
     constructor(options){
         super()
         this.options = options;
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
 
         if(typeof this.options.serviceName !== "string"){
             console.error("invalid serviceName", this.options.serviceName);
@@ -36,11 +37,12 @@ export default class MQDriver extends EventEmitter{
     }
 
     async init(){
-        this.conn = await amqplib.connect(this.options.address);
+        this.conn = await amqplib.connect(this.address);
         this.channel = await this.conn.createChannel();
         await this.channel.prefetch(this.options.prefetch || 10);
         await this.createReceiveQueue();
 
+        return this;
     }
 
     async createReceiveQueue(){

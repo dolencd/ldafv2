@@ -4,7 +4,6 @@ import EventEmitter from "eventemitter3";
 import uuid from "uuid";
 
 interface MQDriverOptions {
-    address?: string;
     prefetch?: number;
 }
 
@@ -49,18 +48,21 @@ export class MQDriver extends EventEmitter{
 
     private conn: amqplib.Connection;
     private channel: amqplib.Channel;
+    private address: string;
 
     private receiveDirectQueue: amqplib.Replies.AssertQueue;
     private receiveDirectConsume: amqplib.Replies.Consume;
     private pendingRequests: any; //TODO: use generated uuid as key in typescript???
+    
 
     constructor(options?: MQDriverOptions){
         super()
         this.options = options;
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
     }
 
     async init(){
-        this.conn = await amqplib.connect(this.options.address || process.env.RABBITMQ_ADDRESS);
+        this.conn = await amqplib.connect(this.address);
         this.channel = await this.conn.createChannel();
         await this.channel.prefetch(this.options.prefetch || 10);
         await this.createReceiveQueue();
@@ -97,7 +99,7 @@ export class MQDriver extends EventEmitter{
             exclusive: true,
             durable: true
         })
-        this.receiveDirectConsume = this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
+        this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
     }
 
     async sendRequest(serviceName: string, reqParams: object){

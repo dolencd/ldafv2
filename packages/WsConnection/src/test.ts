@@ -1,7 +1,7 @@
 console.log("start")
 import assert from "assert";
 
-import ServerTranscoder from "./ServerTranscoder";
+import {ServerTranscoder} from "./ServerTranscoder";
 
 const testTranscoder = async () => {
     

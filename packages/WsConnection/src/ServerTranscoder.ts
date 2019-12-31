@@ -1,5 +1,12 @@
 "use strict";
-export default class ServerTranscoder {
+
+export interface DecodedMessage {
+    seq: number,
+    type: number,
+    payload: Buffer
+}
+
+export class ServerTranscoder {
     private typeLen: number;
     private seqLen: number;
 
@@ -10,7 +17,7 @@ export default class ServerTranscoder {
     }
 
 
-    encodeInt(num: number, length: number){
+    private encodeInt(num: number, length: number){
         if(typeof num !== 'number' || num < 0 || num >= (256^length)){
             throw new Error(`can't encode ${num} into ${length} bytes`);
         }
@@ -32,7 +39,7 @@ export default class ServerTranscoder {
     }
 
 
-    readInt(buf: Buffer){
+    private readInt(buf: Buffer){
         switch (buf.length){
             case 1:
                 return buf.readUInt8(0);
