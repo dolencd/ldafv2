@@ -33,25 +33,32 @@ export class Client extends EventEmitter {
         this._id = uuid();
         this._socket = socket;
         this._serverTranscoder = new ServerTranscoder();//TODO add typelen and seqlen settings to url
-        this._socket.on("message", this._handleMessage);
-        this._socket.on("close", () => {
+        socket.on("message", this._handleMessage.bind(this));
+        socket.on("close", () => {
             console.log("socket closed");
             this.emit("close");
         })
-        this._socket.on("error", (err) => {
+        socket.on("error", (err) => {
             console.error("WS error", err);
         })
     }
 
-    private _handleMessage(rawMessage: Buffer){
-        if(!rawMessage){
-            console.log("got empty rawMessage");
+    private _handleMessage(rawMessage: Buffer|string){
+        let messageToDecode: Buffer;
+        if(Buffer.isBuffer(rawMessage)){
+            messageToDecode = rawMessage;
+        }
+        else if (typeof rawMessage === "string"){
+            messageToDecode = Buffer.from(rawMessage);
+        }
+        else {
+            console.log("rawMessage not buffer or hex string", rawMessage);
             return;
         }
 
         let message: DecodedMessage;
         try {
-            message = this._serverTranscoder.decode(rawMessage);
+            message = this._serverTranscoder.decode(messageToDecode);
         }
         catch(e){
             console.error("failed to decode rawMessage", e);
@@ -87,7 +94,7 @@ export class Client extends EventEmitter {
     private _decodeTypeNumber(_type: number){
         let type = _type;
         for(const service of this._services){
-            if(service.typeCount < type){
+            if(service.typeCount > type){
                 return {
                     service,
                     type,

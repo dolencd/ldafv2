@@ -1,6 +1,7 @@
 "use strict"
 import amqplib from "amqplib";
 import EventEmitter from "eventemitter3";
+import * as BJSON from "json-buffer";
 import uuid from "uuid";
 
 interface MQDriverOptions {
@@ -57,20 +58,37 @@ export class MQDriver extends EventEmitter{
 
     constructor(options?: MQDriverOptions){
         super()
+    
         this.options = options;
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
+        this.pendingRequests = {};
     }
 
     async init(){
         this.conn = await amqplib.connect(this.address);
+
+        this.conn.on("close", () => {
+            console.log("MQ conn close")
+        })
+        this.conn.on("error", (e) => {
+            console.log("MQ conn error", e)
+        })
+        this.conn.on("blocked", (r) => {
+            console.log("MQ conn blocked", r)
+        })
+        this.conn.on("unblocked", () => {
+            console.log("MQ conn unblocked")
+        })
+
         this.channel = await this.conn.createChannel();
-        await this.channel.prefetch(this.options.prefetch || 10);
+        await this.channel.prefetch((this.options && this.options.prefetch) || 10);
         await this.createReceiveQueue();
 
         return this;
     }
 
     private async createReceiveQueue(){
+        console.log("MQ creating receive queue")
         const gotResponse = (msg: amqplib.ConsumeMessage) => {
             if(!this.pendingRequests[msg.properties.correlationId]){
                 console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
@@ -81,7 +99,7 @@ export class MQDriver extends EventEmitter{
             delete this.pendingRequests[msg.properties.correlationId];
             let decodedResponse
             try {
-                decodedResponse = JSON.parse(msg.content.toString());
+                decodedResponse = BJSON.parse(msg.content.toString());
             }
             catch(e){
                 console.error("failed to decode message content", msg);
@@ -100,6 +118,7 @@ export class MQDriver extends EventEmitter{
             durable: true
         })
         this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
+        console.log("MQ receive queue created", this.receiveDirectQueue.queue)
     }
 
     async sendRequest(serviceName: string, reqParams: object){
@@ -118,11 +137,12 @@ export class MQDriver extends EventEmitter{
         }
 
         try{
-            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(JSON.stringify(reqParams)), {
+            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(BJSON.stringify(reqParams)), {
                 deliveryMode: true,
                 timestamp: Date.now(),
                 correlationId: requestObj.correlationId,
-                replyTo: this.receiveDirectQueue.queue
+                replyTo: this.receiveDirectQueue.queue,
+                mandatory: true
             })
             if(!ok){
                 console.log("publish returned false");
@@ -134,9 +154,31 @@ export class MQDriver extends EventEmitter{
 
         
         this.pendingRequests[requestObj.correlationId] = requestObj;
-
+        console.log("MQ request sent", requestObj)
         return requestObj.responsePromise
+    
 
+    }
+
+    async queuesExists(queues: Array<string>) {
+        const sacrificialChannel = await this.conn.createChannel();
+        sacrificialChannel.on("error", (e) => {
+            console.log("got error on sacrificial channel", e)
+        })
+        try {
+            await Promise.all(queues.map((queue: string) => {
+                return sacrificialChannel.checkQueue(queue);
+            }))
+            sacrificialChannel.close();
+            return true;
+        }
+        catch(e) {
+            if(e.code !== 404) throw e;
+            return false;
+        }
+        finally{
+            console.log("finally")
+        }
     }
 
     async getServiceInfo(serviceName: string){

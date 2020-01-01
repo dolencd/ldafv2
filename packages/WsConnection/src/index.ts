@@ -10,10 +10,11 @@ const clients: any = {
 const main = async () => {
 
     const mqDriver = await (new MQDriver()).init();
+    const port = parseInt(process.env.WS_PORT) || 8547;
 
     const wsServer = new Ws.Server({
         clientTracking: true,
-        port: parseInt(process.env.WS_PORT) || 8547
+        port
     });
 
     wsServer.on("connection", async (socket, request) => {
@@ -29,15 +30,18 @@ const main = async () => {
             serviceNames = [queryParams.s];
         }
         else {
-            console.log("invalid querystring", request);
+            console.log("invalid querystring", request.url);
             return;
         }
 
 
         let services: Array<ServiceInfo>;
         try {
-            services = await Promise.all(serviceNames.map((serviceName: string) => {
-                return mqDriver.sendRequest(serviceName, {
+
+            if(!mqDriver.queuesExists(serviceNames.map(serviceName => `s:${serviceName}`))) throw "missing service queues" 
+
+            services = await Promise.all(serviceNames.map(async (serviceName: string) => {
+                return await mqDriver.sendRequest(serviceName, {
                     method: "serviceInfo",
                     params: {}
                     //TODO: kaksni parametri??
@@ -45,9 +49,11 @@ const main = async () => {
             }))
         }
         catch(e){
-            console.log("error retrieving service info");
+            console.log("error retrieving service info", e);
             return
         }
+
+        console.log("got service infos for client", services)
 
         const client = new Client(socket, services, request)
         if(clients[client.id]){
@@ -59,14 +65,18 @@ const main = async () => {
         client.once("close", () => {
             delete clients[client.id];
         })
-        client.on("message", (service: string, message: {payload: Buffer, type: number}) => {
-            mqDriver.sendRequest(service, message); //TODO: handle response
+        client.on("message", (service: string, message: {payload: Buffer, type: number}, callback) => {
+            mqDriver.sendRequest(service, message)
+            .catch((error) => {
+                console.error("mqDriver response error", error)
+            })
+            .then(callback)
         }) 
     })
 
 
     wsServer.on("listening", () => {
-        console.log("WS listening on" + process.env.WS_PORT)
+        console.log("WS listening on", port)
     })
 
     wsServer.on("error", (error) => {
