@@ -2,6 +2,7 @@ const execa = require("execa");
 const {join}  = require( "path");
 const fetch  = require( "node-fetch");
 const fs  = require( "fs-extra");
+const isBase64 = require("is-base64");
 const ServiceBase  = require( "./ServiceBase");
 
 const tmpFilePath = join(process.cwd(), "_tmp.zip");
@@ -11,6 +12,21 @@ const SERVICE_DIR = join(process.cwd(), "service");
 const unzipBase64ToFolder = async (base64, folderPath) => {
     try{
         let zipFile = Buffer.from(base64, "base64");
+        let hextest = re = /[0-9A-Fa-f]{6}/g;
+        if(Buffer.isBuffer(base64)){
+            zipFile = base64;
+        }
+        else if(isBase64(base64)){
+            zipFile = Buffer.from(base64, "base64");
+        }
+        else if(hextest.test(base64)){
+            zipFile = Buffer.from(base64, "hex")
+        }
+        else {
+            console.error("invalid input format in unzip", base64);
+            return;
+        }
+
 
         await fs.writeFile(tmpFilePath, zipFile)
 
