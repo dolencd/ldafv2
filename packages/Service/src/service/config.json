@@ -4,7 +4,7 @@
         "protobuf": {
             "name": "protobuf",
             "src": "url? DB ID?",
-            "options": {
+            "config": {
                 "protoFiles": [
                     "./main.proto"
                 ]
@@ -14,28 +14,25 @@
     "dependencies": [
 
     ],
-    "options":{
-        "initialValue": 42
-    },
     "methods": [
         {
             "name": "updateValue",
-            "description": "update stored value",
             "type": "noRes",
-            "input": {
-                "protobuf_schema": "simpleNumber"
-            }
+            "plugins": {
+                "protobuf":{
+                    "inputSchema": "a"
+                }
+            } 
         },
         {
             "name": "add",
-            "description": "add the provided input to the current stored value and return the result",
             "type": "req/res",
-            "input": {
-                "protobuf_schema": "simpleNumber"
-            },
-            "output": {
-                "protobuf_schema": "simpleNumber"
-            }
+            "pluginConfig": {
+                "protobuf":{
+                    "inputSchema": "a",
+                    "outputSchema": "c"
+                }
+            } 
         }
     ]
 }

@@ -9,13 +9,12 @@ let methods = {};
 
 const init = async (config) => {
 
-    let protoFiles = [
-        "./main.proto",
-        "./main2.proto"
-    ]
+    if(!(config.plugins && config.plugins.protobuf && config.plugins.protobuf.config && config.plugins.protobuf.config.protoFiles)){
+        throw new Error("missing proto files")
+    }
 
     try {
-        await Promise.all(protoFiles.map((protoFilePath) => {
+        await Promise.all(config.plugins.protobuf.config.protoFiles.map((protoFilePath) => {
             return new Promise((resolve, reject) => {
                 protoRoot.load(join(__dirname, protoFilePath), (err, res) => {
                     if(err) reject(err)
@@ -30,26 +29,48 @@ const init = async (config) => {
                 name: type.name,
                 type,
                 encode: (obj) => type.encode(type.create(obj)).finish(),
-                decode: (buf) => type.decode(buf)
+                decode: (buf) => {
+                    let a = type.decode(buf);
+                    let b = type.toObject(a);
+                    console.log();
+                    return b
+                }
             }
         })
         console.log("message types parsed")
         config.methods.map(method => {
-            if(methods[method.name]) throw "method already exists:" + method.name;
+            if(!(method.pluginConfig && method.pluginConfig.protobuf)) {
+                console.warn(`The method "${method.name}" is missing protobuf settings. it will be ignored`)
+                return;
+            };
 
-            if(method.input){
-                if(!method.input.protobuf_schema) throw "missing input proto schema:" + method.name;
-                if(!messageTypes[method.input.protobuf_schema]) throw "unknown input schema name:" + method.name;
-                method.input.protobuf_schema = messageTypes[method.input.protobuf_schema];
+            const methodConfig = method.pluginConfig.protobuf;
+
+            const methodObj = {
+                name: method.name,
             }
 
-            if(method.output){
-                if(!method.output.protobuf_schema) throw "missing output proto schema:" + method.name;
-                if(!messageTypes[method.output.protobuf_schema]) throw "unknown output schema name:" + method.name;
-                method.output.protobuf_schema = messageTypes[method.output.protobuf_schema];
+            if(methods[method.name]) throw new Error("method already exists:" + method.name);
+
+            if(method.type !== "noRes"){
+                if(!methodConfig.inputSchema && !messageTypes[methodConfig.inputSchema]) {
+                    console.warn("failed to get input schema for method:" + method.name);
+                }
+                else {
+                    methodObj.inputSchema = messageTypes[methodConfig.inputSchema];
+                }
             }
 
-            methods[method.name] = method;
+            if(methodConfig.outputSchema){
+                if(!methodConfig.outputSchema && !messageTypes[methodConfig.outputSchema]) {
+                    console.warn("failed to get output schema for method:" + method.name);
+                }
+                else {
+                    methodObj.outputSchema = messageTypes[methodConfig.outputSchema];
+                }
+            }
+
+            methods[method.name] = methodObj;
         })
         console.log("protos prepared")
     }
@@ -63,72 +84,45 @@ const init = async (config) => {
 }
 
 const methodCall = (event, context, callback) => {
+
     let method = methods[event.method];
+    if(!method) {
+        return [event, context, callback];
+    }
+
     let params;
-    try {
-        params = method.input.decode(event.bufferParams)
+    if(method.inputSchema){
+        try {
+            params = method.inputSchema.decode(event.bufferParams)
+        }
+        catch(e) {
+            console.error("error decoding message", event, method);
+        }
     }
-    catch(e) {
-        console.error("error decoding message", event, method);
-    }
+
+
 
     return [
         {
             ...event,
-            params
+            params //is undefined if method is unknown
         },
         context,
-            (responseObj) => {
+            method.outputSchema ? (responseObj) => {
             let encodedResponse;
             try {
-                encodedResponse = method.output.encode(responseObj);
+                encodedResponse = method.outputSchema.encode(responseObj);
             }
             catch(e) {
                 console.error("error encoding ")
             }
             callback(encodedResponse);
-        }
+        } : callback
     ]
 }
 
-init({
-    "name": "adder",
-    "plugins": {
-        "protobuf": {
-            "name": "protobuf",
-            "src": "url? DB ID?",
-            "options": {
-                "protoFiles": [
-                    "./main.proto"
-                ]
-            }
-        }
-    },
-    "dependencies": [
-
-    ],
-    "options":{
-        "initialValue": 42
-    },
-    "methods": [
-        {
-            "name": "updateValue",
-            "description": "update stored value",
-            "type": "noRes",
-            "input": {
-                "protobuf_schema": "simpleNumber"
-            }
-        },
-        {
-            "name": "add",
-            "description": "add the provided input to the current stored value and return the result",
-            "type": "req/res",
-            "input": {
-                "protobuf_schema": "simpleNumber"
-            },
-            "output": {
-                "protobuf_schema": "simpleNumber"
-            }
-        }
-    ]
-})
+module.exports = {
+    messageTypes,
+    init,
+    methodCall
+}
