@@ -1,5 +1,5 @@
 module.exports = {
-    callMethod: (event, context, callback) => {
+    applyPluginToapplyPluginToMethodCall: (event, context, callback) => {
 
         let decodedParams;
 

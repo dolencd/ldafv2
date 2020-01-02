@@ -83,7 +83,7 @@ const init = async (config) => {
 
 }
 
-const methodCall = (event, context, callback) => {
+const applyPluginToMethodCall = (event, context, callback) => {
 
     let method = methods[event.method];
     if(!method) {
@@ -124,5 +124,5 @@ const methodCall = (event, context, callback) => {
 module.exports = {
     messageTypes,
     init,
-    methodCall
+    applyPluginToMethodCall
 }

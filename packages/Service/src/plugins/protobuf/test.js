@@ -1,4 +1,4 @@
-const {init, methodCall, messageTypes} = require("./main");
+const {init, applyPluginToMethodCall, messageTypes} = require("./main");
 const assert = require("assert");
 
 
@@ -55,50 +55,50 @@ const main = async () => {
     returnFn = (returnedValue) => {
         assert.ok(inputBuffer.equals(returnedValue), "incorrect output buffer")
     };
-    let methodCallReturn = methodCall.call(null, {
+    let applyPluginToMethodCallReturn = applyPluginToMethodCall.call(null, {
         method: "methodB",
         bufferParams: inputBuffer
     },
     ctx,
     returnFn
     );
-    assert.deepEqual(methodCallReturn[0], {
+    assert.deepEqual(applyPluginToMethodCallReturn[0], {
         method: "methodB",
         bufferParams: inputBuffer,
         params: params,
     }, "method parameters incorrectly decoded")
-    assert.deepEqual(methodCallReturn[1], ctx,  "context should be the same");
-    methodCallReturn[2](methodCallReturn[0].params)
+    assert.deepEqual(applyPluginToMethodCallReturn[1], ctx,  "context should be the same");
+    applyPluginToMethodCallReturn[2](applyPluginToMethodCallReturn[0].params)
 
 
 
-    let methodCallReturn2 = methodCall.call(null, {
+    let applyPluginToMethodCallReturn2 = applyPluginToMethodCall.call(null, {
         method: "methodC",
         bufferParams: inputBuffer
     },
     ctx,
     returnFn
     );
-    assert.deepEqual(methodCallReturn2[0], {
+    assert.deepEqual(applyPluginToMethodCallReturn2[0], {
         method: "methodC",
         bufferParams: inputBuffer
     }, "method parameters incorrectly decoded")
-    assert.deepEqual(methodCallReturn2[1], ctx,  "context should be the same");
-    methodCallReturn2[2](methodCallReturn[0].bufferParams)
+    assert.deepEqual(applyPluginToMethodCallReturn2[1], ctx,  "context should be the same");
+    applyPluginToMethodCallReturn2[2](applyPluginToMethodCallReturn[0].bufferParams)
 
-    let methodCallReturn3 = methodCall.call(null, {
+    let applyPluginToMethodCallReturn3 = applyPluginToMethodCall.call(null, {
         method: "methodC",
         bufferParams: inputBuffer
     },
     ctx,
     returnFn
     );
-    assert.deepEqual(methodCallReturn3[0], {
+    assert.deepEqual(applyPluginToMethodCallReturn3[0], {
         method: "methodC",
         bufferParams: inputBuffer
     }, "method parameters incorrectly decoded")
-    assert.deepEqual(methodCallReturn3[1], ctx,  "context should be the same");
-    methodCallReturn3[2](methodCallReturn3[0].bufferParams)
+    assert.deepEqual(applyPluginToMethodCallReturn3[1], ctx,  "context should be the same");
+    applyPluginToMethodCallReturn3[2](applyPluginToMethodCallReturn3[0].bufferParams)
 
     
     
