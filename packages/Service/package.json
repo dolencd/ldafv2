@@ -18,7 +18,8 @@
     "ioredis": "^4.14.1",
     "is-base64": "^1.0.0",
     "mongodb": "^3.3.4",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.0",
+    "protobufjs": "^6.8.8"
   },
   "devDependencies": {
     "ioredis-mock": "^4.18.2"

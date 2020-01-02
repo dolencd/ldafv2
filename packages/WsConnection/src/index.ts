@@ -2,10 +2,13 @@ import * as Ws from "ws";
 import {Client, MessageType} from "./Client"
 import {MQDriver, ServiceInfo} from "./mqDriver"
 import * as querystring from "querystring"
+import * as protobufjs from "protobufjs";
 
-const clients: any = {
 
-}
+
+
+
+const clients: { [k: string]: object } = {}
 
 const main = async () => {
 

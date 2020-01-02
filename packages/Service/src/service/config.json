@@ -1,0 +1,41 @@
+{
+    "name": "adder",
+    "plugins": {
+        "protobuf": {
+            "name": "protobuf",
+            "src": "url? DB ID?",
+            "options": {
+                "protoFiles": [
+                    "./main.proto"
+                ]
+            }
+        }
+    },
+    "dependencies": [
+
+    ],
+    "options":{
+        "initialValue": 42
+    },
+    "methods": [
+        {
+            "name": "updateValue",
+            "description": "update stored value",
+            "type": "noRes",
+            "input": {
+                "protobuf_schema": "simpleNumber"
+            }
+        },
+        {
+            "name": "add",
+            "description": "add the provided input to the current stored value and return the result",
+            "type": "req/res",
+            "input": {
+                "protobuf_schema": "simpleNumber"
+            },
+            "output": {
+                "protobuf_schema": "simpleNumber"
+            }
+        }
+    ]
+}

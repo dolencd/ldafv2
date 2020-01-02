@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message simpleNumber2 {
+    uint32 value = 1;
+}
+
+message simpleNumber3 {
+    uint32 value = 1;
+}
+
+message simpleNumber4 {
+    uint32 value = 1;
+}
+
+message simpleNumber5 {
+    uint32 value = 1;
+}
