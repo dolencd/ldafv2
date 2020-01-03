@@ -33,9 +33,15 @@ const main = async () => {
     }
     */
     mqDriver.on("message", async (msg, content, sendReply) => {
+        if(!content.type){
+            console.error("message missing type", msg);
+            return;
+        }
 
-        if(!content.method || !userService[content.method]){
-            console.error("attempted to call unknown method");
+        let method = serviceConfig.methods[content.type];
+
+        if(!method){
+            console.error("attempted to call unknown method", msg, serviceConfig.methods);
             return;
         }
         const redisKey = `${serviceConfig.name}:${msg.properties.appId}`;

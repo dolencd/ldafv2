@@ -67,7 +67,7 @@ module.exports = class MQDriver extends EventEmitter{
         }
 
         this.receiveQueue = await this.channel.assertQueue(`s:${this.options.serviceName}`, {
-            exclusive: true,
+            exclusive: false,
             durable: true
         })
         this.receiveDirectConsume = await this.channel.consume(this.receiveQueue.queue, gotMessage, {

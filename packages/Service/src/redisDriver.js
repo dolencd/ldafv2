@@ -25,7 +25,17 @@ module.exports = class RedisDriver {
             "select"
         ].map((name) => {
             this.redis.on(name, (a,b) => {
-                console.log("redis " + name, a, b);
+                console.log("redis event " + name, a, b);
+            })
+        });
+
+        [
+            "exit",
+            "SIGINT"
+        ].map((signal) => {
+            process.on(signal, () => {
+                console.log("redis closing", signal)
+                this.close();
             })
         })
         
@@ -33,7 +43,6 @@ module.exports = class RedisDriver {
 
     async readData(key){
         return this.redis.get(key)
-
     }
 
     async writeData(key, data){

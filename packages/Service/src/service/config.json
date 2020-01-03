@@ -20,7 +20,7 @@
             "type": "noRes",
             "pluginConfig": {
                 "protobuf":{
-                    "inputSchema": "a"
+                    "inputSchema": "simpleNumber"
                 }
             } 
         },
@@ -29,8 +29,8 @@
             "type": "req/res",
             "pluginConfig": {
                 "protobuf":{
-                    "inputSchema": "a",
-                    "outputSchema": "c"
+                    "inputSchema": "simpleNumber",
+                    "outputSchema": "simpleNumber"
                 }
             } 
         }

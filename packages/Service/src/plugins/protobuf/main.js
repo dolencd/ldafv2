@@ -52,18 +52,18 @@ const init = async (config) => {
 
             if(methods[method.name]) throw new Error("method already exists:" + method.name);
 
-            if(method.type !== "noRes"){
-                if(!methodConfig.inputSchema && !messageTypes[methodConfig.inputSchema]) {
-                    console.warn("failed to get input schema for method:" + method.name);
-                }
-                else {
-                    methodObj.inputSchema = messageTypes[methodConfig.inputSchema];
-                }
+            
+            if(!methodConfig.inputSchema || !messageTypes[methodConfig.inputSchema]) {
+                console.warn("failed to get input schema for method:" + method.name, methodConfig, Object.keys(messageTypes));
             }
+            else {
+                methodObj.inputSchema = messageTypes[methodConfig.inputSchema];
+            }
+            
 
-            if(methodConfig.outputSchema){
-                if(!methodConfig.outputSchema && !messageTypes[methodConfig.outputSchema]) {
-                    console.warn("failed to get output schema for method:" + method.name);
+            if(method.type !== "noRes"){
+                if(!methodConfig.outputSchema || !messageTypes[methodConfig.outputSchema]) {
+                    console.warn("failed to get output schema for method:" + method.name, methodConfig, Object.keys(messageTypes));
                 }
                 else {
                     methodObj.outputSchema = messageTypes[methodConfig.outputSchema];
