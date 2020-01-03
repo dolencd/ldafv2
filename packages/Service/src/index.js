@@ -1,11 +1,10 @@
-const fs = require("fs-extra");
 const path = require("path");
 const MqDriver = require("./mqDriver");
 const RedisDriver = require("./redisDriver");
 
 const serviceConfig = require(path.join(__dirname, "service", "config.json"));
 const getPluginArr = async (config) => {
-    const pluginNameArr = config.plugins.keys();
+    const pluginNameArr = Object.keys(config.plugins);
     return Promise.all(pluginNameArr.map(async (pluginName) => {
         let plugin = require(path.join(__dirname, "plugins", pluginName, "main.js"));
         await plugin.init(config);
@@ -21,6 +20,7 @@ const main = async () => {
 
     const redisDriver = new RedisDriver();
     const mqDriver = await (new MqDriver({
+        serviceName: serviceConfig.name,
         prefetch: 10
     })).init()
     
@@ -32,7 +32,7 @@ const main = async () => {
         sendReply(buffer)
     }
     */
-    mqDriver.on("message", (msg, content, sendReply) => {
+    mqDriver.on("message", async (msg, content, sendReply) => {
 
         if(!content.method || !userService[content.method]){
             console.error("attempted to call unknown method");

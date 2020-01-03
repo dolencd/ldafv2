@@ -18,7 +18,7 @@
         {
             "name": "updateValue",
             "type": "noRes",
-            "plugins": {
+            "pluginConfig": {
                 "protobuf":{
                     "inputSchema": "a"
                 }

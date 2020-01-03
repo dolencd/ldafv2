@@ -1,7 +1,7 @@
 const protobufjs = require("protobufjs");
-const {join} = require("path");
+const path = require("path");
 
-const projectRoot = require.main ? require.main.filename : __dirname;
+const projectRoot = path.join(path.dirname(require.main.filename), "service");
 
 let protoRoot = new protobufjs.Root();
 let messageTypes = {};
@@ -16,7 +16,7 @@ const init = async (config) => {
     try {
         await Promise.all(config.plugins.protobuf.config.protoFiles.map((protoFilePath) => {
             return new Promise((resolve, reject) => {
-                protoRoot.load(join(__dirname, protoFilePath), (err, res) => {
+                protoRoot.load(path.join(projectRoot, protoFilePath), (err, res) => {
                     if(err) reject(err)
                     else resolve(res);
                 })

@@ -27,6 +27,12 @@ module.exports = class MQDriver extends EventEmitter{
 
     constructor(options){
         super()
+
+        if(typeof options.serviceName !== "string"){
+            console.error("MQ options.serviceName should be string");
+            return;
+        }
+
         this.options = options;
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
 
@@ -60,7 +66,7 @@ module.exports = class MQDriver extends EventEmitter{
             })
         }
 
-        this.receiveQueue = await this.channel.assertQueue(`s:${serviceName}`, {
+        this.receiveQueue = await this.channel.assertQueue(`s:${this.options.serviceName}`, {
             exclusive: true,
             durable: true
         })
