@@ -16,6 +16,18 @@ module.exports = class RedisDriver {
             //TODO: redis options
         });
 
+        [
+            "connect",
+            "error",
+            "close",
+            "reconnecting",
+            "end",
+            "select"
+        ].map((name) => {
+            this.redis.on(name, (a,b) => {
+                console.log("redis " + name, a, b);
+            })
+        })
         
     }
 
