@@ -3,8 +3,6 @@ import {Client, MessageType} from "./Client"
 import {MQDriver, ServiceInfo} from "./mqDriver"
 import * as querystring from "querystring"
 
-
-
 const clients: { [k: string]: object } = {}
 
 const main = async () => {
@@ -66,7 +64,7 @@ const main = async () => {
             delete clients[client.id];
         })
         client.on("message", (service: string, message: {payload: Buffer, type: number}, callback) => {
-            mqDriver.sendRequest(service, message)
+            mqDriver.sendRequest(service, message, client.id)
             .catch((error) => {
                 console.error("mqDriver response error", error)
             })
@@ -76,7 +74,7 @@ const main = async () => {
 
 
     wsServer.on("listening", () => {
-        console.log("WS listening on", port)
+        console.log("WS lis tening on", port)
     })
 
     wsServer.on("error", (error) => {

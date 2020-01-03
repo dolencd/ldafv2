@@ -111,6 +111,8 @@ export class MQDriver extends EventEmitter{
             else {
                 requestObj.promiseResolve(decodedResponse);
             }
+
+            this.channel.ack(msg);
         }
 
         this.receiveDirectQueue = await this.channel.assertQueue('', {
@@ -121,7 +123,7 @@ export class MQDriver extends EventEmitter{
         console.log("MQ receive queue created", this.receiveDirectQueue.queue)
     }
 
-    async sendRequest(serviceName: string, reqParams: object){
+    async sendRequest(serviceName: string, reqParams: object, clientId?: string){
 
         let promiseResolve, promiseReject
         let requestObj: RequestObject = {
@@ -142,7 +144,8 @@ export class MQDriver extends EventEmitter{
                 timestamp: Date.now(),
                 correlationId: requestObj.correlationId,
                 replyTo: this.receiveDirectQueue.queue,
-                mandatory: true
+                mandatory: true,
+                appId: clientId
             })
             if(!ok){
                 console.log("publish returned false");
@@ -175,9 +178,6 @@ export class MQDriver extends EventEmitter{
         catch(e) {
             if(e.code !== 404) throw e;
             return false;
-        }
-        finally{
-            console.log("finally")
         }
     }
 

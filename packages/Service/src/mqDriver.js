@@ -1,7 +1,6 @@
 "use strict"
 const amqplib = require("amqplib");
 const EventEmitter = require("eventemitter3");
-const uuid = require("uuid");
 /*
 
 ws verzija
@@ -24,7 +23,7 @@ ws verzija
 
 */
 
-export default class MQDriver extends EventEmitter{
+module.exports = class MQDriver extends EventEmitter{
 
     constructor(options){
         super()
@@ -56,6 +55,7 @@ export default class MQDriver extends EventEmitter{
                         correlationId: msg.properties.correlationId,
                         timestamp: Date.now()
                     })
+                    this.channel.ack(msg);
                 }
             })
         }
