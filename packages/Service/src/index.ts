@@ -1,8 +1,9 @@
-const path = require("path");
-const MqDriver = require("./mqDriver");
-const RedisDriver = require("./redisDriver");
+import path from "path"
+import {MQDriver} from "./mqDriver"
+import {RedisDriver} from "./redisDriver"
+import {ServiceConfig, PluginConfig} from "./typeDefs"
 
-const serviceConfig = require(path.join(__dirname, "service", "config.json"));
+const serviceConfig: ServiceConfig = require(path.join(__dirname, "service", "config.json"));
 serviceConfig.methods = serviceConfig.methods.map(method => {
     return {
         typeCount: method.type === "noRes" ? 1 : 2,
@@ -14,7 +15,7 @@ serviceConfig.typeCount = serviceConfig.methods.reduce((acc, curr) => {
 }, 0)
 
 
-const getPluginArr = async (config) => {
+const getPluginArr = async (config: ServiceConfig) => {
     const pluginNameArr = Object.keys(config.plugins);
     return Promise.all(pluginNameArr.map(async (pluginName) => {
         let plugin = require(path.join(__dirname, "plugins", pluginName, "main.js"));
@@ -29,7 +30,7 @@ const main = async () => {
     const plugins = await getPluginArr(serviceConfig);
 
     const redisDriver = new RedisDriver();
-    const mqDriver = await (new MqDriver({
+    const mqDriver = await (new MQDriver({
         prefetch: 10
     }, serviceConfig)).init()
     
@@ -54,12 +55,12 @@ const main = async () => {
 
 
         let typeCount = 0;
-        let methodIndex = this.serviceConfig.methods.findIndex((val, index) => {
+        let methodIndex = serviceConfig.methods.findIndex((val, index) => {
             if((typeCount + val.typeCount) > content.type) return true
             typeCount += val.typeCount
             return false;
         })
-        let method = this.serviceConfig.methods[methodIndex];
+        let method = serviceConfig.methods[methodIndex];
 
         // if(!method){
         //     console.error("attempted to call unknown method", msg, serviceConfig.methods);
@@ -82,8 +83,8 @@ const main = async () => {
 
         let finalArguments = await plugins.reduce(async (accum, current) => {
             return current.applyPluginToMethodCall.apply(null, await accum);
-        }, [content, ctx, (response, newCtx) => {
-            redisDriver.writeData(redisKey, newCtx) //intentionally not waiting for write to finish
+        }, [content, ctx, (response: Buffer, newCtx: object) => {
+            redisDriver.writeData(redisKey, JSON.stringify(newCtx)) //intentionally not waiting for write to finish
             .catch((err) => {
                 console.error("redis write rejected", err);
             })

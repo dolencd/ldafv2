@@ -1,7 +1,9 @@
 "use strict"
-const amqplib = require("amqplib");
-const EventEmitter = require("eventemitter3");
-const BJSON = require("json-buffer");
+import amqplib from "amqplib";
+import EventEmitter from "eventemitter3";
+import BJSON from "json-buffer";
+
+import { ServiceConfig, ServiceInfo } from "./typeDefs";
 /*
 
 ws verzija
@@ -24,12 +26,25 @@ ws verzija
 
 */
 
-module.exports = class MQDriver extends EventEmitter{
+export interface MQDriverOptions{
+    prefetch: number
+}
 
-    constructor(options, serviceConfig){
+export class MQDriver extends EventEmitter{
+
+    serviceInfoBuffer: Buffer
+    options: MQDriverOptions
+    serviceConfig: ServiceConfig
+    address: string
+    conn: amqplib.Connection
+    channel: amqplib.Channel
+    receiveQueue: amqplib.Replies.AssertQueue
+    receiveDirectConsume: amqplib.Replies.Consume
+
+    constructor(options: MQDriverOptions, serviceConfig: ServiceConfig){
         super()
 
-        this.serviceInfo = Buffer.from(BJSON.stringify({
+        this.serviceInfoBuffer = Buffer.from(BJSON.stringify({
             name: serviceConfig.name,
             typeCount: serviceConfig.typeCount
         }));
@@ -37,7 +52,7 @@ module.exports = class MQDriver extends EventEmitter{
         this.serviceConfig = serviceConfig;
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
 
-        if(typeof this.options.serviceName !== "string"){
+        if(typeof this.serviceConfig.name !== "string"){
             console.error("invalid serviceName", this.serviceConfig.name);
         }
     }
@@ -67,7 +82,7 @@ module.exports = class MQDriver extends EventEmitter{
     }
 
     async createReceiveQueue(){
-        const gotMessage = (msg) => {
+        const gotMessage = (msg: amqplib.Message) => {
             
             console.log("MQ message", msg)
             
@@ -102,21 +117,21 @@ module.exports = class MQDriver extends EventEmitter{
         })
     }
 
-    _handleInfoCall(msg) {
+    private _handleInfoCall(msg: amqplib.Message) {
         //TODO: request validation. yup?
-        this.channel.sendToQueue(msg.properties.replyTo, this.serviceInfo, {
+        this.channel.sendToQueue(msg.properties.replyTo, this.serviceInfoBuffer, {
             correlationId: msg.properties.correlationId,
             timestamp: Date.now()
         })
         this.channel.ack(msg);
     }
 
-    _handleMethodCall(msg) {
+    private _handleMethodCall(msg: amqplib.Message) {
         //TODO: request validation. yup?
         this.emit("methodCall", {
             msg,
             content: msg.content || {},
-            sendReply: (content) => {
+            sendReply: (content: object) => {
                 this.channel.sendToQueue(msg.properties.replyTo, Buffer.from(BJSON.stringify(content)), {
                     correlationId: msg.properties.correlationId,
                     timestamp: Date.now()

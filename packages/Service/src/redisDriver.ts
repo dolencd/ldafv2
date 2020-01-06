@@ -1,16 +1,21 @@
-const Redis = require("ioredis");
+import Redis from "ioredis";
 
 
-module.exports = class RedisDriver {
+export class RedisDriver {
+
+    redis: Redis.Redis
+    host: string
+    port: number
+
     constructor(){
         this.host = process.env.REDIS_HOST || "localhost";
-        this.port = process.env.REDIS_PORT || 6379;
+        this.port = parseInt(process.env.REDIS_PORT) || 6379;
 
         console.log(`redis host:${this.host} port:${this.port}`);
 
         this.redis = new Redis({
-            port: process.env.REDIS_PORT, 
-            host: process.env.REDIS_HOST,
+            port: this.port, 
+            host: this.host,
             password: process.env.REDIS_PASSWORD || null,
             showFriendlyErrorStack: true
             //TODO: redis options
@@ -41,11 +46,11 @@ module.exports = class RedisDriver {
         
     }
 
-    async readData(key){
+    async readData(key: string){
         return this.redis.get(key)
     }
 
-    async writeData(key, data){
+    async writeData(key: string, data: string){
         return this.redis.set(key, data);
     }
 

@@ -1,7 +1,7 @@
 {
     "name": "adder",
-    "plugins": {
-        "protobuf": {
+    "plugins": [
+        {
             "name": "protobuf",
             "src": "url? DB ID?",
             "config": {
@@ -10,7 +10,7 @@
                 ]
             }
         }
-    },
+    ],
     "dependencies": [
 
     ],

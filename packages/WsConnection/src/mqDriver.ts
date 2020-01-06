@@ -18,7 +18,7 @@ interface RequestObject {
 }
 
 export interface ServiceInfo {
-    name: string,
+    name: string, //TODO: add methodCount
     typeCount: number
 }
 

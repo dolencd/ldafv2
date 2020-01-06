@@ -1,20 +1,45 @@
-const protobufjs = require("protobufjs");
+import protobufjs from "protobufjs"
+import {ServiceConfig, PluginConfig, MethodConfig} from "../../typeDefs"
 const path = require("path");
 
 const projectRoot = path.join(path.dirname(require.main.filename), "service");
 
+interface MessageType {
+    name: string,
+    type: protobufjs.ReflectionObject,
+    encode(obj: object): Buffer, 
+    decode(buf: Buffer): object
+}
+
+interface ProtobufConfig extends PluginConfig{
+    config: {
+        protoFiles: Array<string>
+    }
+}
+
+interface ProtobufMethodConfig extends MethodConfig {
+    pluginConfig: {
+        protobuf: {
+            inputSchema?: string,
+            outputSchema?: string
+        }
+    }
+}
+
 let protoRoot = new protobufjs.Root();
-let messageTypes = {};
-let methods = {};
+const messageTypes: {[k: string]: MessageType} = {};
+const methods: {[k: string]: ProtobufMethodConfig} = {};
 
-const init = async (config) => {
+const init = async (config: ServiceConfig) => {
 
-    if(!(config.plugins && config.plugins.protobuf && config.plugins.protobuf.config && config.plugins.protobuf.config.protoFiles)){
+    const protobufConfig: ProtobufConfig = config.plugins.find(p => p.name === "protobuf")
+
+    if(!protobufConfig || !protobufConfig.config || !protobufConfig.config.protoFiles){
         throw new Error("missing proto files")
     }
 
     try {
-        await Promise.all(config.plugins.protobuf.config.protoFiles.map((protoFilePath) => {
+        await Promise.all(protobufConfig.config.protoFiles.map((protoFilePath: string) => {
             return new Promise((resolve, reject) => {
                 protoRoot.load(path.join(projectRoot, protoFilePath), (err, res) => {
                     if(err) reject(err)
@@ -23,7 +48,7 @@ const init = async (config) => {
             })
         }))
         console.log("proto files read")
-        protoRoot.nestedArray.map((type) => {
+        protoRoot.nestedArray.map((type: any) => {//TODO: find proper type
             
             messageTypes[type.name] = {
                 name: type.name,
