@@ -79,7 +79,7 @@ const init = async (config) => {
     }
 
 
-    console.log();
+    return this;
 
 }
 

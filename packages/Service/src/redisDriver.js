@@ -29,15 +29,15 @@ module.exports = class RedisDriver {
             })
         });
 
-        [
-            "exit",
-            "SIGINT"
-        ].map((signal) => {
-            process.on(signal, () => {
-                console.log("redis closing", signal)
-                this.close();
-            })
-        })
+        // [
+        //     "exit",
+        //     "SIGINT"
+        // ].map((signal) => {
+        //     process.on(signal, () => {
+        //         console.log("redis closing", signal)
+        //         this.close();
+        //     })
+        // })
         
     }
 

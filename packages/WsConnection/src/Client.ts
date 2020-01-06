@@ -75,7 +75,7 @@ export class Client extends EventEmitter {
             return;
         }
         
-        this.emit("message", messageType.service, {
+        this.emit("methodCall", messageType.service.name, {
             payload: message.payload,
             type: messageType.type
         }, (response: ServiceResponse) => {

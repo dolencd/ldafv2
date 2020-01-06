@@ -123,7 +123,7 @@ export class MQDriver extends EventEmitter{
         console.log("MQ receive queue created", this.receiveDirectQueue.queue)
     }
 
-    async sendRequest(serviceName: string, reqParams: object, clientId?: string){
+    async sendRequest({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:object}){
 
         let promiseResolve, promiseReject
         let requestObj: RequestObject = {
@@ -144,8 +144,8 @@ export class MQDriver extends EventEmitter{
                 timestamp: Date.now(),
                 correlationId: requestObj.correlationId,
                 replyTo: this.receiveDirectQueue.queue,
-                mandatory: true,
-                appId: clientId
+                persistent: true,
+                type
             })
             if(!ok){
                 console.log("publish returned false");
@@ -157,9 +157,8 @@ export class MQDriver extends EventEmitter{
 
         
         this.pendingRequests[requestObj.correlationId] = requestObj;
-        console.log("MQ request sent", requestObj)
+        console.log("MQ request sent", arguments, requestObj.correlationId)
         return requestObj.responsePromise
-    
 
     }
 
@@ -182,7 +181,10 @@ export class MQDriver extends EventEmitter{
     }
 
     async getServiceInfo(serviceName: string){
-        let res: ServiceInfo = await this.sendRequest(serviceName, {method: "info"});
+        let res: ServiceInfo = await this.sendRequest({
+            serviceName, 
+            type: "info",
+         });
         return res;
     }
 

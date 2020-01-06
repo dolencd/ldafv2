@@ -28,7 +28,7 @@ const main = async () => {
             },
             {
                 "name": "methodB",
-                "type": "req/res",
+                "type": "default",
                 "pluginConfig": {
                     "protobuf":{
                         "inputSchema": "a",
@@ -38,7 +38,7 @@ const main = async () => {
             },
             {
                 "name": "methodC",
-                "type": "req/res"
+                "type": "default"
             }
         ]
     })

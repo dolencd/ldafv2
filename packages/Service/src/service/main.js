@@ -1,4 +1,4 @@
-const updateValue = (event, context, callback) => {
+const updateValue = (event, context) => {
     context.initialValue = event.params.value;
 }
 

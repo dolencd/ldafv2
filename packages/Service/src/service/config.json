@@ -16,21 +16,21 @@
     ],
     "methods": [
         {
+            "name": "add",
+            "type": "default",
+            "pluginConfig": {
+                "protobuf":{
+                    "inputSchema": "simpleNumber",
+                    "outputSchema": "simpleNumber"
+                }
+            } 
+        },
+        {
             "name": "updateValue",
             "type": "noRes",
             "pluginConfig": {
                 "protobuf":{
                     "inputSchema": "simpleNumber"
-                }
-            } 
-        },
-        {
-            "name": "add",
-            "type": "req/res",
-            "pluginConfig": {
-                "protobuf":{
-                    "inputSchema": "simpleNumber",
-                    "outputSchema": "simpleNumber"
                 }
             } 
         }

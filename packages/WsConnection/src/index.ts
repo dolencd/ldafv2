@@ -38,12 +38,8 @@ const main = async () => {
 
             if(!mqDriver.queuesExists(serviceNames.map(serviceName => `s:${serviceName}`))) throw "missing service queues" 
 
-            services = await Promise.all(serviceNames.map(async (serviceName: string) => {
-                return await mqDriver.sendRequest(serviceName, {
-                    method: "serviceInfo",
-                    params: {}
-                    //TODO: kaksni parametri??
-                })
+            services = await Promise.all(serviceNames.map((serviceName: string) => {
+                return mqDriver.getServiceInfo(serviceName);
             }))
         }
         catch(e){
@@ -63,9 +59,16 @@ const main = async () => {
         client.once("close", () => {
             delete clients[client.id];
         })
-        client.on("message", (service: string, message: {payload: Buffer, type: number}, callback) => {
-            mqDriver.sendRequest(service, message, client.id)
-            .catch((error) => {
+        client.on("methodCall", (serviceName: string, message: {payload: Buffer, type: number}, callback) => {
+            mqDriver.sendRequest({
+                serviceName, 
+                reqParams: message, 
+                type: "methodCall",
+                options: {
+                    appId: client.id
+                }
+            })
+            .catch((error: Error) => {
                 console.error("mqDriver response error", error)
             })
             .then(callback)
