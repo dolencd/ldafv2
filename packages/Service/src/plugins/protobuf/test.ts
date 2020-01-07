@@ -57,15 +57,15 @@ const main = async () => {
         assert.ok(inputBuffer.equals(returnedValue), "incorrect output buffer")
     };
     let applyPluginToMethodCallReturn: any = applyPluginToMethodCall.call(null, {
-        method: "methodB",
-        bufferParams: inputBuffer
+        method: {name:"methodB"},
+        payload: inputBuffer
     },
     ctx,
     returnFn
     );
     assert.deepEqual(applyPluginToMethodCallReturn[0], {
-        method: "methodB",
-        bufferParams: inputBuffer,
+        method: {name:"methodB"},
+        payload: inputBuffer,
         params: params,
     }, "method parameters incorrectly decoded")
     assert.deepEqual(applyPluginToMethodCallReturn[1], ctx,  "context should be the same");
@@ -74,32 +74,32 @@ const main = async () => {
 
 
     let applyPluginToMethodCallReturn2: any = applyPluginToMethodCall.call(null, {
-        method: "methodC",
-        bufferParams: inputBuffer
+        method: {name:"methodC"},
+        payload: inputBuffer
     },
     ctx,
     returnFn
     );
     assert.deepEqual(applyPluginToMethodCallReturn2[0], {
-        method: "methodC",
-        bufferParams: inputBuffer
+        method: {name:"methodC"},
+        payload: inputBuffer
     }, "method parameters incorrectly decoded")
     assert.deepEqual(applyPluginToMethodCallReturn2[1], ctx,  "context should be the same");
-    applyPluginToMethodCallReturn2[2](applyPluginToMethodCallReturn[0].bufferParams)
+    applyPluginToMethodCallReturn2[2](applyPluginToMethodCallReturn[0].payload)
 
     let applyPluginToMethodCallReturn3: any = applyPluginToMethodCall.call(null, {
-        method: "methodC",
-        bufferParams: inputBuffer
+        method: {name:"methodC"},
+        payload: inputBuffer
     },
     ctx,
     returnFn
     );
     assert.deepEqual(applyPluginToMethodCallReturn3[0], {
-        method: "methodC",
-        bufferParams: inputBuffer
+        method: {name:"methodC"},
+        payload: inputBuffer
     }, "method parameters incorrectly decoded")
     assert.deepEqual(applyPluginToMethodCallReturn3[1], ctx,  "context should be the same");
-    applyPluginToMethodCallReturn3[2](applyPluginToMethodCallReturn3[0].bufferParams)
+    applyPluginToMethodCallReturn3[2](applyPluginToMethodCallReturn3[0].payload)
 
     
     

@@ -4,15 +4,11 @@ import WebSocket from "ws";
 import {ServerTranscoder, DecodedMessage} from "./ServerTranscoder";
 import {IncomingMessage} from "http"
 
-import {ServiceInfo} from "./mqDriver";
-
-interface ServiceResponse {
-    payload: Buffer,
-    type: number
-}
+import {ServiceInfo, ServiceInfoMethod} from "./mqDriver";
 
 export interface MessageType {
     service: ServiceInfo,
+    method: ServiceInfoMethod
     type: number,
     offset: number
 }
@@ -74,13 +70,10 @@ export class Client extends EventEmitter {
             console.error(e, message, this._services, this);
             return;
         }
-        
-        this.emit("methodCall", messageType.service.name, {
-            payload: message.payload,
-            type: messageType.type
-        }, (response: ServiceResponse) => {
+
+        this.emit("methodCall", messageType, message.payload, (response: Buffer) => {
             try {
-                let encodedResponse: Buffer = this._serverTranscoder.encode(response.type + messageType.offset, message.seq, response.payload);
+                let encodedResponse: Buffer = this._serverTranscoder.encode(message.type + 1, message.seq, response);
                 this._socket.send(encodedResponse);
             }
             catch(e){
@@ -92,6 +85,26 @@ export class Client extends EventEmitter {
     }
 
     private _decodeTypeNumber(_type: number){
+        let {service, type, offset} = this._getServiceFromTypeNumber(_type);
+
+        let typesChecked = 0;
+
+        for(const method of service.methods){
+            if((typesChecked + method.typeCount) > type){
+                return {
+                    method,
+                    service,
+                    type,
+                    offset: type - _type
+                }
+            }
+            typesChecked += method.typeCount
+        }
+        throw "method type out of bounds"
+    }
+
+    private _getServiceFromTypeNumber(_type: number){
+        
         let type = _type;
         for(const service of this._services){
             if(service.typeCount > type){
@@ -103,7 +116,7 @@ export class Client extends EventEmitter {
             }
             type -= service.typeCount;
         }
-        throw "type out of bounds"
+        throw "service type out of bounds"
     }
 
     close() {

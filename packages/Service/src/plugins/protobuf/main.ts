@@ -117,7 +117,7 @@ export const init = async (config: ServiceConfig) => {
 
 export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (responseBuffer: Buffer) => void) => {
 
-    let method = methods[event.method];
+    let method = methods[event.method.name];//method with added protobuf info
     if(!method) {
         return [event, context, callback];
     }
@@ -125,7 +125,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
     let params;
     if(method.inputSchema){
         try {
-            params = method.inputSchema.decode(event.bufferParams)
+            params = method.inputSchema.decode(event.payload)
         }
         catch(e) {
             console.error("error decoding message", event, method);

@@ -21,10 +21,15 @@ export interface MethodConfig {
 
 export interface ServiceInfo {
     name: string,
-    typeCount: number
+    typeCount: number,
+    methods: Array<{
+        name: string,
+        type: string,
+        typeCount: number
+    }>
 }
 
 export interface MethodCallEvent {
-    bufferParams: Buffer,
-    method: string
+    payload: Buffer,
+    method: MethodConfig
 }

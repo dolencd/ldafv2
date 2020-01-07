@@ -59,11 +59,11 @@ const main = async () => {
         client.once("close", () => {
             delete clients[client.id];
         })
-        client.on("methodCall", (serviceName: string, message: {payload: Buffer, type: number}, callback) => {
+        client.on("methodCall", (messageType: MessageType, payload: Buffer, callback) => {
             mqDriver.sendRequest({
-                serviceName, 
-                reqParams: message, 
-                type: "methodCall",
+                serviceName: messageType.service.name, 
+                reqParams: payload, 
+                type: "methodCall:" + messageType.method.name,
                 options: {
                     appId: client.id
                 }

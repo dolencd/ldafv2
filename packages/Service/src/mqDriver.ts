@@ -46,7 +46,14 @@ export class MQDriver extends EventEmitter{
 
         this.serviceInfoBuffer = Buffer.from(BJSON.stringify({
             name: serviceConfig.name,
-            typeCount: serviceConfig.typeCount
+            typeCount: serviceConfig.typeCount,
+            methods: serviceConfig.methods.map(m => {
+                return {
+                    name: m.name,
+                    typeCount: m.typeCount,
+                    type: m.type
+                }
+            })
         }));
         this.options = options;
         this.serviceConfig = serviceConfig;
@@ -92,14 +99,16 @@ export class MQDriver extends EventEmitter{
             catch(e){
                 console.error("MQ content decode error");
             }
+
+            const [type, methodName] = msg.properties.type.split(":");
             
 
-            switch(msg.properties.type){
+            switch(type){
                 case "info":
                     this._handleInfoCall(msg);
                     break;
                 case "methodCall":
-                    this._handleMethodCall(msg);
+                    this._handleMethodCall(msg, methodName);
                     break;
                 default:
                     console.error("got message of unknown type", msg)
@@ -107,14 +116,17 @@ export class MQDriver extends EventEmitter{
         
         }
 
+        console.log(1)
         this.receiveQueue = await this.channel.assertQueue(`s:${this.serviceConfig.name}`, {
             exclusive: false,
             durable: true
         })
+        console.log(2)
         this.receiveDirectConsume = await this.channel.consume(this.receiveQueue.queue, gotMessage, {
             noAck: false,
             exclusive: false
         })
+        console.log(3)
     }
 
     private _handleInfoCall(msg: amqplib.Message) {
@@ -126,19 +138,25 @@ export class MQDriver extends EventEmitter{
         this.channel.ack(msg);
     }
 
-    private _handleMethodCall(msg: amqplib.Message) {
+    private _handleMethodCall(msg: amqplib.Message, methodName: string) {
+
+        if(!methodName){
+            console.error("attempted to call unknown method", msg, this.serviceConfig.methods);
+            return;
+        }
+
         //TODO: request validation. yup?
-        this.emit("methodCall", {
+        this.emit("methodCall", 
             msg,
-            content: msg.content || {},
-            sendReply: (content: object) => {
-                this.channel.sendToQueue(msg.properties.replyTo, Buffer.from(BJSON.stringify(content)), {
+            methodName,
+            (content: Buffer) => {
+                this.channel.sendToQueue(msg.properties.replyTo, content, {
                     correlationId: msg.properties.correlationId,
                     timestamp: Date.now()
                 })
                 this.channel.ack(msg);
             }
-        })
+        )
     }
 
 

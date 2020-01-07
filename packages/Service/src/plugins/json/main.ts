@@ -8,7 +8,7 @@ export const applyPluginToapplyPluginToMethodCall = (event: JSONMethodCallEvent,
 
     let decodedParams: object;
     try {
-        decodedParams = JSON.parse(event.bufferParams.toString());
+        decodedParams = JSON.parse(event.payload.toString());
     }
     catch(e){
         console.error("failed to decode json", e)

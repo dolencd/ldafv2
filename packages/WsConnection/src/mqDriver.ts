@@ -18,9 +18,17 @@ interface RequestObject {
 }
 
 export interface ServiceInfo {
-    name: string, //TODO: add methodCount
+    name: string,
+    typeCount: number,
+    methods: Array<ServiceInfoMethod>
+}
+
+export interface ServiceInfoMethod {
+    name: string,
+    type: string,
     typeCount: number
 }
+
 
 /*
 
@@ -97,20 +105,20 @@ export class MQDriver extends EventEmitter{
     
             const requestObj = this.pendingRequests[msg.properties.correlationId];
             delete this.pendingRequests[msg.properties.correlationId];
-            let decodedResponse
-            try {
-                decodedResponse = BJSON.parse(msg.content.toString());
-            }
-            catch(e){
-                console.error("failed to decode message content", msg);
-            }
+            // let decodedResponse
+            // try {
+            //     decodedResponse = BJSON.parse(msg.content.toString());
+            // }
+            // catch(e){
+            //     console.error("failed to decode message content", msg);
+            // }
             
-            if(decodedResponse.error){
-                requestObj.promiseReject(decodedResponse.error);
-            }
-            else {
-                requestObj.promiseResolve(decodedResponse);
-            }
+            // if(decodedResponse.error){
+            //     requestObj.promiseReject(decodedResponse.error);
+            // }
+            // else {
+                requestObj.promiseResolve(msg.content);
+            // }
 
             this.channel.ack(msg);
         }
@@ -181,11 +189,12 @@ export class MQDriver extends EventEmitter{
     }
 
     async getServiceInfo(serviceName: string){
-        let res: ServiceInfo = await this.sendRequest({
+        let res: Promise<Buffer> = await this.sendRequest({
             serviceName, 
             type: "info",
          });
-        return res;
+         
+        return BJSON.parse(res.toString());
     }
 
 }
