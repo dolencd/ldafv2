@@ -43,7 +43,7 @@ const main = async () => {
         sendReply(buffer)
     }
     */
-    mqDriver.on("methodCall", async (msg, methodName, sendReply) => {
+    mqDriver.on("methodCall", async (msg, methodName, sendReply, sendError) => {
 
         const method = serviceConfig.methods.find(m => m.name === methodName);
         if(!method){
@@ -64,17 +64,22 @@ const main = async () => {
             console.error("error reading redis", e);
         }
 
-    
-
-        let finalArguments = await plugins.reduce(async (accum, current) => {
-            return current.applyPluginToMethodCall.apply(null, await accum);
-        }, [{method, payload: msg.content}, ctx, (response: Buffer, newCtx: object) => {
-            redisDriver.writeData(redisKey, JSON.stringify(newCtx)) //intentionally not waiting for write to finish
-            .catch((err) => {
-                console.error("redis write rejected", err);
-            })
-            sendReply(response)
-        }])
+        let finalArguments
+        try {
+            finalArguments = await plugins.reduce(async (accum, current) => {
+                return current.applyPluginToMethodCall.apply(null, await accum);
+            }, [{method, payload: msg.content}, ctx, (response: Buffer, newCtx: object) => {
+                redisDriver.writeData(redisKey, JSON.stringify(newCtx)) //intentionally not waiting for write to finish
+                .catch((err) => {
+                    console.error("redis write rejected", err);
+                })
+                sendReply(response)
+            }])
+        }
+        catch(e){
+            console.error("failed to apply plugins", plugins, msg)
+            sendError(e)
+        }
 
         await userService[methodName].apply(null, finalArguments);
     })

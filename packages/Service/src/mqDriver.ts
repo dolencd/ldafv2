@@ -146,17 +146,40 @@ export class MQDriver extends EventEmitter{
         }
 
         //TODO: request validation. yup?
-        this.emit("methodCall", 
-            msg,
-            methodName,
-            (content: Buffer) => {
-                this.channel.sendToQueue(msg.properties.replyTo, content, {
-                    correlationId: msg.properties.correlationId,
-                    timestamp: Date.now()
-                })
-                this.channel.ack(msg);
-            }
-        )
+        
+            this.emit("methodCall", 
+                msg,
+                methodName,
+                (content: Buffer) => {
+                    this.channel.sendToQueue(msg.properties.replyTo, content, {
+                        correlationId: msg.properties.correlationId,
+                        timestamp: Date.now()
+                    })
+                    this.channel.ack(msg);
+                },
+                (error: string|object) => {
+
+                    let toSend: Buffer;
+
+                    if(typeof error === "string"){
+                        toSend = Buffer.from(error);
+                    }
+                    else if (typeof error === "object"){
+                        toSend = Buffer.from(BJSON.stringify(error));
+                    }
+                    else {
+                        console.error("unknown type in method call errback")
+                    }
+
+                    this.channel.sendToQueue(msg.properties.replyTo, Buffer.from(toSend), {
+                        correlationId: msg.properties.correlationId,
+                        timestamp: Date.now(),
+                        type: "error"
+                    })
+                    this.channel.ack(msg);
+                }
+            )
+        
     }
 
 

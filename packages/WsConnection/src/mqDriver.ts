@@ -105,22 +105,13 @@ export class MQDriver extends EventEmitter{
     
             const requestObj = this.pendingRequests[msg.properties.correlationId];
             delete this.pendingRequests[msg.properties.correlationId];
-            // let decodedResponse
-            // try {
-            //     decodedResponse = BJSON.parse(msg.content.toString());
-            // }
-            // catch(e){
-            //     console.error("failed to decode message content", msg);
-            // }
-            
-            // if(decodedResponse.error){
-            //     requestObj.promiseReject(decodedResponse.error);
-            // }
-            // else {
-                requestObj.promiseResolve(msg.content);
-            // }
 
             this.channel.ack(msg);
+
+            if(msg.properties.type === "error"){
+                requestObj.promiseReject(msg.content.toString);
+            }
+            requestObj.promiseResolve(msg.content);
         }
 
         this.receiveDirectQueue = await this.channel.assertQueue('', {
