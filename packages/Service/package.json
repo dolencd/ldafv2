@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
+    "compile": "tsc",
     "test": "node dist/test.js",
     "build": "docker build -t dolencd/ldafv2service .",
     "push": "docker push dolencd/ldafv2service"

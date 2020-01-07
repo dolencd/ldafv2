@@ -1,7 +1,7 @@
 import path from "path"
 import {MQDriver} from "./mqDriver"
 import {RedisDriver} from "./redisDriver"
-import {ServiceConfig, PluginConfig} from "./typeDefs"
+import {ServiceConfig} from "./typeDefs"
 
 const serviceConfig: ServiceConfig = require(path.join(__dirname, "service", "config.json"));
 serviceConfig.methods = serviceConfig.methods.map(method => {
@@ -16,7 +16,7 @@ serviceConfig.typeCount = serviceConfig.methods.reduce((acc, curr) => {
 
 
 const getPluginArr = async (config: ServiceConfig) => {
-    const pluginNameArr = Object.keys(config.plugins);
+    const pluginNameArr: Array<string> = config.plugins.map(p => p.name);
     return Promise.all(pluginNameArr.map(async (pluginName) => {
         let plugin = require(path.join(__dirname, "plugins", pluginName, "main.js"));
         return plugin.init(config);

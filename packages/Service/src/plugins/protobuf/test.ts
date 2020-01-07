@@ -1,4 +1,4 @@
-const {init, applyPluginToMethodCall, messageTypes} = require("./main");
+import {init, applyPluginToMethodCall} from "./main";
 const assert = require("assert");
 
 
@@ -6,16 +6,17 @@ const assert = require("assert");
 const main = async () => {
     await init({
         "name": "adder",
-        "plugins": {
-            "protobuf": {
+        "plugins": [
+            {
                 "name": "protobuf",
+                "src": "url? DB ID?",
                 "config": {
                     "protoFiles": [
-                        "./test.proto"
+                        "./main.proto"
                     ]
                 }
             }
-        },
+        ],
         "methods": [
             {
                 "name": "methodA",
@@ -52,10 +53,10 @@ const main = async () => {
         boolean: true
     },
     ctx = {ctx:"ctx"},
-    returnFn = (returnedValue) => {
+    returnFn = (returnedValue: Buffer) => {
         assert.ok(inputBuffer.equals(returnedValue), "incorrect output buffer")
     };
-    let applyPluginToMethodCallReturn = applyPluginToMethodCall.call(null, {
+    let applyPluginToMethodCallReturn: any = applyPluginToMethodCall.call(null, {
         method: "methodB",
         bufferParams: inputBuffer
     },
@@ -72,7 +73,7 @@ const main = async () => {
 
 
 
-    let applyPluginToMethodCallReturn2 = applyPluginToMethodCall.call(null, {
+    let applyPluginToMethodCallReturn2: any = applyPluginToMethodCall.call(null, {
         method: "methodC",
         bufferParams: inputBuffer
     },
@@ -86,7 +87,7 @@ const main = async () => {
     assert.deepEqual(applyPluginToMethodCallReturn2[1], ctx,  "context should be the same");
     applyPluginToMethodCallReturn2[2](applyPluginToMethodCallReturn[0].bufferParams)
 
-    let applyPluginToMethodCallReturn3 = applyPluginToMethodCall.call(null, {
+    let applyPluginToMethodCallReturn3: any = applyPluginToMethodCall.call(null, {
         method: "methodC",
         bufferParams: inputBuffer
     },

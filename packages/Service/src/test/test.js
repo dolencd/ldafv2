@@ -2,7 +2,7 @@ console.log("start")
 const assert = require("assert");
 const testRedis = async () => {
     //TEST REDIS DRIVER
-    const RedisDriver = require("../src/redisDriver")
+    const RedisDriver = require("../redisDriver")
     // assert.equal(typeof RedisDriver, "object", "RedisDriver must return object");
     const redisDriver = new RedisDriver();
 

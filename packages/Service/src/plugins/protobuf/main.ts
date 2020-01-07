@@ -1,23 +1,23 @@
 import protobufjs from "protobufjs"
-import {ServiceConfig, PluginConfig, MethodConfig} from "../../typeDefs"
-const path = require("path");
+import {ServiceConfig, PluginConfig, MethodConfig, MethodCallEvent} from "../../typeDefs"
+import path from "path";
 
 const projectRoot = path.join(path.dirname(require.main.filename), "service");
 
-interface MessageType {
+export interface MessageType {
     name: string,
     type: protobufjs.ReflectionObject,
     encode(obj: object): Buffer, 
     decode(buf: Buffer): object
 }
 
-interface ProtobufConfig extends PluginConfig{
+export interface ProtobufConfig extends PluginConfig{
     config: {
         protoFiles: Array<string>
     }
 }
 
-interface ProtobufMethodConfig extends MethodConfig {
+export interface ProtobufMethodConfig extends MethodConfig {
     pluginConfig: {
         protobuf: {
             inputSchema?: string,
@@ -26,11 +26,21 @@ interface ProtobufMethodConfig extends MethodConfig {
     }
 }
 
+export interface ProtobufMethodObject {
+    name: string,
+    inputSchema?: MessageType,
+    outputSchema?: MessageType
+}
+
+export interface ProtobufMethodCallEvent extends MethodCallEvent{
+    params?: object
+}
+
 let protoRoot = new protobufjs.Root();
 const messageTypes: {[k: string]: MessageType} = {};
-const methods: {[k: string]: ProtobufMethodConfig} = {};
+const methods: {[k: string]: ProtobufMethodObject} = {};
 
-const init = async (config: ServiceConfig) => {
+export const init = async (config: ServiceConfig) => {
 
     const protobufConfig: ProtobufConfig = config.plugins.find(p => p.name === "protobuf")
 
@@ -63,7 +73,7 @@ const init = async (config: ServiceConfig) => {
             }
         })
         console.log("message types parsed")
-        config.methods.map(method => {
+        config.methods.map((method) => {
             if(!(method.pluginConfig && method.pluginConfig.protobuf)) {
                 console.warn(`The method "${method.name}" is missing protobuf settings. it will be ignored`)
                 return;
@@ -71,7 +81,7 @@ const init = async (config: ServiceConfig) => {
 
             const methodConfig = method.pluginConfig.protobuf;
 
-            const methodObj = {
+            const methodObj: ProtobufMethodObject = {
                 name: method.name,
             }
 
@@ -103,12 +113,9 @@ const init = async (config: ServiceConfig) => {
         console.error("error loading protos", e)
     }
 
-
-    return this;
-
 }
 
-const applyPluginToMethodCall = (event, context, callback) => {
+export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (responseBuffer: Buffer) => void) => {
 
     let method = methods[event.method];
     if(!method) {
@@ -133,7 +140,7 @@ const applyPluginToMethodCall = (event, context, callback) => {
             params //is undefined if method is unknown
         },
         context,
-            method.outputSchema ? (responseObj) => {
+            method.outputSchema ? (responseObj: object) => {
             let encodedResponse;
             try {
                 encodedResponse = method.outputSchema.encode(responseObj);
@@ -144,10 +151,4 @@ const applyPluginToMethodCall = (event, context, callback) => {
             callback(encodedResponse);
         } : callback
     ]
-}
-
-module.exports = {
-    messageTypes,
-    init,
-    applyPluginToMethodCall
 }

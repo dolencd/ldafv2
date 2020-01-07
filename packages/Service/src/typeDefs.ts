@@ -15,11 +15,16 @@ export interface PluginConfig {
 export interface MethodConfig {
     name: string,
     type?: string,
-    pluginConfig: any,
+    pluginConfig?: any,
     typeCount?: number
 }
 
 export interface ServiceInfo {
     name: string,
     typeCount: number
+}
+
+export interface MethodCallEvent {
+    bufferParams: Buffer,
+    method: string
 }
