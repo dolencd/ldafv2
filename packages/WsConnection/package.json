@@ -21,7 +21,7 @@
     "utf-8-validate": "^5.0.2"
   },
   "name": "wsconnection",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "WebSocket server for LDAFv2",
   "main": "index.js",
   "scripts": {
