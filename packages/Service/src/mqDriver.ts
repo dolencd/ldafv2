@@ -145,13 +145,25 @@ export class MQDriver extends EventEmitter{
             return;
         }
 
+        if(!msg.properties.correlationId) {
+            this.emit("methodCall", 
+                msg,
+                methodName,
+                () => {
+                    this.channel.ack(msg);
+                }
+            )
+            
+            return;
+        }
+
         //TODO: request validation. yup?
         
             this.emit("methodCall", 
                 msg,
                 methodName,
                 (content: Buffer) => {
-                    this.channel.sendToQueue(msg.properties.replyTo, content, {
+                    this.channel.sendToQueue(msg.properties.replyTo, content || Buffer.alloc(0), {
                         correlationId: msg.properties.correlationId,
                         timestamp: Date.now()
                     })

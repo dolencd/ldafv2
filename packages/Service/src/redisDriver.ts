@@ -1,13 +1,16 @@
 import Redis from "ioredis";
-
+import BJSON from "json-buffer";
+import {ServiceConfig} from "./typeDefs"
 
 export class RedisDriver {
 
-    redis: Redis.Redis
-    host: string
-    port: number
+    private redis: Redis.Redis
+    private host: string
+    private port: number
+    private serviceConfig: ServiceConfig
 
-    constructor(){
+    constructor(serviceConfig: ServiceConfig){
+        this.serviceConfig = serviceConfig;
         this.host = process.env.REDIS_HOST || "localhost";
         this.port = parseInt(process.env.REDIS_PORT) || 6379;
 
@@ -46,12 +49,17 @@ export class RedisDriver {
         
     }
 
-    async readData(key: string){
-        return this.redis.get(key)
+    private correctKey(key: string) {
+        return `s:${this.serviceConfig.name}:${key}`
     }
 
-    async writeData(key: string, data: string){
-        return this.redis.set(key, data);
+    async readData(key: string){
+        let data = await this.redis.get(this.correctKey(key))
+        return BJSON.parse(data)
+    }
+
+    async writeData(key: string, data: object){
+        return this.redis.set(this.correctKey(key), BJSON.stringify(data));
     }
 
     async close(){

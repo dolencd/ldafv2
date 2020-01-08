@@ -115,7 +115,7 @@ export const init = async (config: ServiceConfig) => {
 
 }
 
-export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (responseBuffer: Buffer) => void) => {
+export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (newCtx: object, responseBuffer: Buffer) => void) => {
 
     let method = methods[event.method.name];//method with added protobuf info
     if(!method) {
@@ -140,7 +140,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
             params //is undefined if method is unknown
         },
         context,
-            method.outputSchema ? (responseObj: object) => {
+            method.outputSchema ? (newCtx: object, responseObj: object) => {
             let encodedResponse;
             try {
                 encodedResponse = method.outputSchema.encode(responseObj);
@@ -148,7 +148,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
             catch(e) {
                 console.error("error encoding ")
             }
-            callback(encodedResponse);
+            callback(newCtx, encodedResponse);
         } : callback
     ]
 }

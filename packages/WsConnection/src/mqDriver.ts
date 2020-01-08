@@ -122,8 +122,7 @@ export class MQDriver extends EventEmitter{
         console.log("MQ receive queue created", this.receiveDirectQueue.queue)
     }
 
-    async sendRequest({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:object}){
-
+    async sendRequest({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:amqplib.Options.Publish}){
         let promiseResolve, promiseReject
         let requestObj: RequestObject = {
             requestQueue: serviceName,//TODO: get proper queue name
@@ -137,15 +136,24 @@ export class MQDriver extends EventEmitter{
             promiseResolve
         }
 
+        options.correlationId = requestObj.correlationId;
+        options.replyTo = this.receiveDirectQueue.queue
+
+        await this.sendMessage({serviceName, type, reqParams, options})
+        this.pendingRequests[requestObj.correlationId] = requestObj;
+        return requestObj.responsePromise;
+
+    }
+
+    async sendMessage({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:any}){
+        
+        options.deliveryMode = true;
+        options.timestamp = Date.now();
+        options.persistent = true;
+        options.type = type;
+
         try{
-            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(BJSON.stringify(reqParams)), {
-                deliveryMode: true,
-                timestamp: Date.now(),
-                correlationId: requestObj.correlationId,
-                replyTo: this.receiveDirectQueue.queue,
-                persistent: true,
-                type
-            })
+            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(BJSON.stringify(reqParams)), options)
             if(!ok){
                 console.log("publish returned false");
             }
@@ -154,11 +162,7 @@ export class MQDriver extends EventEmitter{
             console.error("channel publish error", e)
         }
 
-        
-        this.pendingRequests[requestObj.correlationId] = requestObj;
-        console.log("MQ request sent", arguments, requestObj.correlationId)
-        return requestObj.responsePromise
-
+        console.log("MQ message sent", arguments)
     }
 
     async queuesExists(queues: Array<string>) {

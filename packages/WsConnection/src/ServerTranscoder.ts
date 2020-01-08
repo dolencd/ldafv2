@@ -54,16 +54,20 @@ export class ServerTranscoder {
 
 
     encode(type: number, seq: number, encodedMessage: Buffer){
-        if(!(encodedMessage instanceof Buffer)){
+        if(!(!encodedMessage || encodedMessage instanceof Buffer)){
             console.error('ServerTranscoder error: encodedMessage is not a Buffer, it is:', encodedMessage);
             return;
         }
         try {
-            return Buffer.concat([
+
+            let bufArrToConcat = [
                 this.encodeInt(type, this.typeLen),
-                seq === 0 ? Buffer.alloc(0) : this.encodeInt(seq, this.seqLen),
-                encodedMessage
-            ]);
+                seq === 0 ? Buffer.alloc(0) : this.encodeInt(seq, this.seqLen)
+            ]
+
+            if(encodedMessage) bufArrToConcat.push(encodedMessage);
+
+            return Buffer.concat(bufArrToConcat);
         }
         catch (e){
             console.error('error in encoding', arguments, e);

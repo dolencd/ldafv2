@@ -53,7 +53,8 @@ const main = async () => {
         boolean: true
     },
     ctx = {ctx:"ctx"},
-    returnFn = (returnedValue: Buffer) => {
+    returnFn = (newCtx: object, returnedValue: Buffer) => {
+        assert.deepEqual(newCtx, ctx, "ctx should not change")
         assert.ok(inputBuffer.equals(returnedValue), "incorrect output buffer")
     };
     let applyPluginToMethodCallReturn: any = applyPluginToMethodCall.call(null, {

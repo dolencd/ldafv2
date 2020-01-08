@@ -1,4 +1,5 @@
 import path from "path"
+import BJSON from "json-buffer"
 import {MQDriver} from "./mqDriver"
 import {RedisDriver} from "./redisDriver"
 import {ServiceConfig} from "./typeDefs"
@@ -30,7 +31,7 @@ const main = async () => {
     const userService = require(path.join(__dirname, "service", "main.js"));
     const plugins = await getPluginArr(serviceConfig);
 
-    const redisDriver = new RedisDriver();
+    const redisDriver = new RedisDriver(serviceConfig);
     const mqDriver = new MQDriver({
         prefetch: 10
     }, serviceConfig)
@@ -68,12 +69,14 @@ const main = async () => {
         try {
             finalArguments = await plugins.reduce(async (accum, current) => {
                 return current.applyPluginToMethodCall.apply(null, await accum);
-            }, [{method, payload: msg.content}, ctx, (response: Buffer, newCtx: object) => {
-                redisDriver.writeData(redisKey, JSON.stringify(newCtx)) //intentionally not waiting for write to finish
-                .catch((err) => {
+            }, [{method, payload: msg.content}, ctx, (newCtx: object,response: Buffer) => {
+                if(newCtx) redisDriver.writeData(redisKey, newCtx) //intentionally not waiting for write to finish
+                .catch((err: Error) => {
                     console.error("redis write rejected", err);
                 })
-                sendReply(response)
+
+                sendReply(response) //if method is noRes the response doesn't matter
+
             }])
         }
         catch(e){

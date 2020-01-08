@@ -60,7 +60,25 @@ const main = async () => {
             delete clients[client.id];
         })
         client.on("methodCall", (messageType: MessageType, payload: Buffer, callback) => {
-            mqDriver.sendRequest({
+
+            if(messageType.method.type === "noRes"){
+                mqDriver.sendRequest.bind(mqDriver)({
+                    serviceName: messageType.service.name, 
+                    reqParams: payload, 
+                    type: "methodCall:" + messageType.method.name,
+                    options: {
+                        appId: client.id
+                    }
+                })
+                .catch((error: Error) => {
+                    console.error("mqDriver response error", error)
+                })
+                callback()
+
+                return;
+            }
+
+            mqDriver.sendRequest.bind(mqDriver)({
                 serviceName: messageType.service.name, 
                 reqParams: payload, 
                 type: "methodCall:" + messageType.method.name,
