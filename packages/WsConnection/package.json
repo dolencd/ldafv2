@@ -28,7 +28,8 @@
     "compile": "tsc",
     "test": "node dist/test.js",
     "build": "docker build -t dolencd/ldafv2ws .",
-    "push": "docker push dolencd/ldafv2ws"
+    "push": "docker push dolencd/ldafv2ws",
+    "start": "node index.js"
   },
   "author": "Dejan Dolenc",
   "license": "ISC"
