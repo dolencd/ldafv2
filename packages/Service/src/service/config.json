@@ -1,5 +1,5 @@
 {
-    "name": "adder",
+    "name": "testService",
     "plugins": [
         {
             "name": "protobuf",
@@ -9,10 +9,10 @@
                     "./main.proto"
                 ]
             }
+        },
+        {
+            "name": "web3"
         }
-    ],
-    "dependencies": [
-
     ],
     "methods": [
         {
@@ -26,11 +26,20 @@
             } 
         },
         {
+            "name": "hashData",
+            "type": "default",
+            "pluginConfig": {
+                "protobuf":{
+                    "inputSchema": "hashDataRequest",
+                    "outputSchema": "hashDataResponse"
+                }
+            } 
+        },
+        {
             "name": "getBlockNumber",
             "type": "default",
             "pluginConfig": {
                 "protobuf":{
-                    "inputSchema": "simpleNumber",
                     "outputSchema": "simpleNumber"
                 }
             } 
