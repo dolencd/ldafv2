@@ -26,6 +26,16 @@
             } 
         },
         {
+            "name": "getBlockNumber",
+            "type": "default",
+            "pluginConfig": {
+                "protobuf":{
+                    "inputSchema": "simpleNumber",
+                    "outputSchema": "simpleNumber"
+                }
+            } 
+        },
+        {
             "name": "updateValue",
             "type": "noRes",
             "pluginConfig": {

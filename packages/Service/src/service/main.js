@@ -18,7 +18,16 @@ const add = (event, context, callback) => {
     });
 }
 
+const getBlockNumber = async (event, context, callback) => {
+    let blockNumber = await event.web3.eth.getBlockNumber().catch(console.error);
+
+    callback(context, {
+        value: blockNumber
+    });
+}
+
 module.exports = {
     updateValue,
-    add
+    add,
+    getBlockNumber
 }
