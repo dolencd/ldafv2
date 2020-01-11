@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+      loc: core
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+        loc: core
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3
+        env: 
+          - RABBITMQ_ADDRESS: amqp://rabbitmq-svc
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 5672

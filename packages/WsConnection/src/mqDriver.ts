@@ -68,11 +68,14 @@ export class MQDriver extends EventEmitter{
         super()
     
         this.options = options;
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
+
+        
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://rabbitmq-svc"
         this.pendingRequests = {};
     }
 
     async init(){
+        console.log("MQ connecting to", this.address)
         this.conn = await amqplib.connect(this.address);
 
         this.conn.on("close", () => {
