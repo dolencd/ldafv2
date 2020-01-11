@@ -70,7 +70,7 @@ export class MQDriver extends EventEmitter{
         this.options = options;
 
         
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://rabbitmq-svc"
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
         this.pendingRequests = {};
     }
 

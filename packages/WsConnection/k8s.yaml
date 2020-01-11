@@ -19,6 +19,9 @@ spec:
       containers:
       - name: ldaf-ws
         image: dolencd/ldafv2ws
+        env: 
+          - name: RABBITMQ_ADDRESS
+            value: "amqp://rabbitmq-svc"
         resources:
           requests:
             memory: "256Mi"

@@ -1,29 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq
+  name: ldafv2-s
   labels:
-    app: rabbitmq
+    app: ldafv2-s
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rabbitmq
+      app: ldafv2-s
       loc: core
   template:
     metadata:
       labels:
-        app: rabbitmq
+        app: ldafv2-s
         loc: core
     spec:
       containers:
-      - name: rabbitmq
-        image: rabbitmq:3
+      - name: ldafv2-s
+        image: dolencd/ldafv2service
         env: 
-          - RABBITMQ_ADDRESS: amqp://rabbitmq-svc
+          - name: RABBITMQ_ADDRESS
+            value: "amqp://rabbitmq-svc"
         resources:
           requests:
             memory: "256Mi"
             cpu: "100m"
-        ports:
-        - containerPort: 5672
