@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "compile": "tsc",
-    "test": "node test/test.js",
+    "test": "node dist/test/test.js",
     "build": "docker build -t dolencd/ldafv2service .",
     "push": "docker push dolencd/ldafv2service",
     "start": "node index.js"
