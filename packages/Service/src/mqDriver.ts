@@ -57,7 +57,7 @@ export class MQDriver extends EventEmitter{
         }));
         this.options = options;
         this.serviceConfig = serviceConfig;
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://rabbitmq-svc"
 
         if(typeof this.serviceConfig.name !== "string"){
             console.error("invalid serviceName", this.serviceConfig.name);
@@ -65,6 +65,7 @@ export class MQDriver extends EventEmitter{
     }
 
     async init(){
+        console.log("MQ connecting to address", this.address)
         this.conn = await amqplib.connect(this.address);
 
         this.conn.on("close", () => {
