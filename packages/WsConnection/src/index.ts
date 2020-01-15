@@ -2,7 +2,9 @@ import * as Ws from "ws";
 import {Client, MessageType} from "./Client"
 import {MQDriver, ServiceInfo} from "./mqDriver"
 import * as querystring from "querystring"
+import uuid from "uuid";
 
+const myId = uuid();
 const clients: { [k: string]: object } = {}
 
 const main = async () => {
@@ -83,7 +85,9 @@ const main = async () => {
                 reqParams: payload, 
                 type: "methodCall:" + messageType.method.name,
                 options: {
-                    appId: client.id
+                    appId: client.id,
+                    deliveryMode: true,
+                    persistent: true
                 }
             })
             .catch((error: Error) => {
@@ -101,6 +105,18 @@ const main = async () => {
     wsServer.on("error", (error) => {
         console.error(error)
     })
+
+    setInterval(() => {
+        let memoryData = process.memoryUsage();
+        mqDriver.sendMessage({
+            queueName: "health",
+            type: "health",
+            options: {
+                appId: "ws-" + myId
+            },
+            reqParams: memoryData
+        })
+    }, 30000)
 }
 
 main();

@@ -57,7 +57,7 @@ export class MQDriver extends EventEmitter{
         }));
         this.options = options;
         this.serviceConfig = serviceConfig;
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://rabbitmq-svc"
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
 
         if(typeof this.serviceConfig.name !== "string"){
             console.error("invalid serviceName", this.serviceConfig.name);
@@ -193,6 +193,28 @@ export class MQDriver extends EventEmitter{
                 }
             )
         
+    }
+
+
+    async sendMessage({serviceName, queueName, type, reqParams={}, options={}}: {serviceName?: string, queueName?:string, type: string, reqParams?: object, options?:any}){
+        
+
+        options.timestamp = Date.now();
+        options.type = type;
+
+        const queue = queueName || `s:${serviceName}`
+
+        try{
+            let ok = this.channel.sendToQueue(queue, Buffer.from(BJSON.stringify(reqParams)), options)
+            if(!ok){
+                console.log("publish returned false");
+            }
+        }
+        catch (e) {
+            console.error("channel publish error", e)
+        }
+
+        console.log("MQ message sent", arguments)
     }
 
 

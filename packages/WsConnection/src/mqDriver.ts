@@ -72,6 +72,8 @@ export class MQDriver extends EventEmitter{
         
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
         this.pendingRequests = {};
+
+        
     }
 
     async init(){
@@ -125,7 +127,7 @@ export class MQDriver extends EventEmitter{
         console.log("MQ receive queue created", this.receiveDirectQueue.queue)
     }
 
-    async sendRequest({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:amqplib.Options.Publish}){
+    async sendRequest({serviceName, queueName, type, reqParams={}, options={}}: {serviceName?: string, queueName?:string, type: string, reqParams?: object, options?:amqplib.Options.Publish}){
         let promiseResolve, promiseReject
         let requestObj: RequestObject = {
             requestQueue: serviceName,//TODO: get proper queue name
@@ -142,21 +144,22 @@ export class MQDriver extends EventEmitter{
         options.correlationId = requestObj.correlationId;
         options.replyTo = this.receiveDirectQueue.queue
 
-        await this.sendMessage({serviceName, type, reqParams, options})
+        await this.sendMessage({serviceName, queueName, type, reqParams, options})
         this.pendingRequests[requestObj.correlationId] = requestObj;
         return requestObj.responsePromise;
 
     }
 
-    async sendMessage({serviceName, type, reqParams={}, options={}}: {serviceName: string, type: string, reqParams?: object, options?:any}){
+    async sendMessage({serviceName, queueName, type, reqParams={}, options={}}: {serviceName?: string, queueName?:string, type: string, reqParams?: object, options?:any}){
         
-        options.deliveryMode = true;
+
         options.timestamp = Date.now();
-        options.persistent = true;
         options.type = type;
 
+        const queue = queueName || `s:${serviceName}`
+
         try{
-            let ok = this.channel.sendToQueue(`s:${serviceName}`, Buffer.from(BJSON.stringify(reqParams)), options)
+            let ok = this.channel.sendToQueue(queue, Buffer.from(BJSON.stringify(reqParams)), options)
             if(!ok){
                 console.log("publish returned false");
             }
@@ -190,6 +193,10 @@ export class MQDriver extends EventEmitter{
         let res: Promise<Buffer> = await this.sendRequest({
             serviceName, 
             type: "info",
+            options: {
+                deliveryMode: true,
+                persistent: true
+            }
          });
          
         return BJSON.parse(res.toString());

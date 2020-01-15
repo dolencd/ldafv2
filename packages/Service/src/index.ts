@@ -3,7 +3,9 @@ import BJSON from "json-buffer"
 import {MQDriver} from "./mqDriver"
 import {RedisDriver} from "./redisDriver"
 import {ServiceConfig} from "./typeDefs"
+import uuid from "uuid"
 
+const myId = uuid();
 const serviceConfig: ServiceConfig = require(path.join(__dirname, "service", "config.json"));
 serviceConfig.methods = serviceConfig.methods.map(method => {
     return {
@@ -88,5 +90,16 @@ const main = async () => {
     })
 
     await mqDriver.init()
+    setInterval(() => {
+        let memoryData = process.memoryUsage();
+        mqDriver.sendMessage({
+            queueName: "health",
+            type: "health",
+            options: {
+                appId: "sv-" + myId
+            },
+            reqParams: memoryData
+        })
+    }, 30000)
 }
 main();
