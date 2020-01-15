@@ -22,6 +22,8 @@ spec:
         env: 
           - name: RABBITMQ_ADDRESS
             value: "amqp://rabbitmq-svc"
+          - name: REDIS_HOST
+            value: "redis-svc"
         resources:
           requests:
             memory: "256Mi"
