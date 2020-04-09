@@ -12,6 +12,7 @@ env:
 
 install:
   - npm i -g typescript lerna
+  - lerna link
   - lerna bootstrap
   - lerna run compile
 
