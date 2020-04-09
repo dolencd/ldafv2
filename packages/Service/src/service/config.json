@@ -9,9 +9,6 @@
                     "./main.proto"
                 ]
             }
-        },
-        {
-            "name": "web3"
         }
     ],
     "methods": [

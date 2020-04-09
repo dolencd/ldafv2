@@ -1,20 +1,19 @@
 import Redis from "ioredis";
 import BJSON from "json-buffer";
-import {ServiceConfig} from "./typeDefs"
 
 export class RedisDriver {
 
-    private redis: Redis.Redis
+    redis: Redis.Redis
     private host: string
     private port: number
-    private serviceConfig: ServiceConfig
+    private name: string
 
-    constructor(serviceConfig: ServiceConfig){
-        this.serviceConfig = serviceConfig;
+    constructor({name}: {name: string}){
         this.host = process.env.REDIS_HOST || "localhost";
         this.port = parseInt(process.env.REDIS_PORT) || 6379;
+        this.name = name
 
-        console.log(`redis host:${this.host} port:${this.port}`);
+        console.log(`redis in service:${this.name} using host:${this.host} and port:${this.port}`);
 
         this.redis = new Redis({
             port: this.port, 
@@ -32,7 +31,7 @@ export class RedisDriver {
             "end",
             "select"
         ].map((name) => {
-            this.redis.on(name, (a,b) => {
+            this.redis.on(name, (a: any,b: any) => {
                 console.log("redis event " + name, a, b);
             })
         });
@@ -50,7 +49,7 @@ export class RedisDriver {
     }
 
     private correctKey(key: string) {
-        return `s:${this.serviceConfig.name}:${key}`
+        return `s:${this.name}:${key}`
     }
 
     async readData(key: string){

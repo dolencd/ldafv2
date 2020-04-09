@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-message a {
-    uint32 number = 1;
-    string string = 2;
-    bool boolean = 3;
-}

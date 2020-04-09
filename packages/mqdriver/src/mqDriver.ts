@@ -2,8 +2,7 @@
 import amqplib from "amqplib";
 import EventEmitter from "eventemitter3";
 import BJSON from "json-buffer";
-
-import { ServiceConfig, ServiceInfo } from "./typeDefs";
+import {v4 as uuid} from "uuid";
 /*
 
 ws verzija
@@ -26,42 +25,74 @@ ws verzija
 
 */
 
+export interface RequestObject {
+    correlationId: string;
+    responsePromise: Promise<any>;
+    promiseResolve: Function;
+    promiseReject: Function;
+    requestQueue: string;
+    reqParams: object
+}
+
+export interface ServiceInfo {
+    name: string,
+    typeCount: number,
+    methods: Array<ServiceInfoMethod>
+}
+
+export interface ServiceInfoMethod {
+    name: string,
+    type: string,
+    typeCount: number
+}
+
 export interface MQDriverOptions{
     prefetch: number
 }
 
+export interface Options {
+    mqDriverOptions: MQDriverOptions,
+    name?: string,
+    serviceInfoBuffer?: Buffer
+}
+
 export class MQDriver extends EventEmitter{
 
-    serviceInfoBuffer: Buffer
-    options: MQDriverOptions
-    serviceConfig: ServiceConfig
-    address: string
-    conn: amqplib.Connection
-    channel: amqplib.Channel
-    receiveQueue: amqplib.Replies.AssertQueue
-    receiveDirectConsume: amqplib.Replies.Consume
+    private serviceInfoBuffer: Buffer
+    private options: MQDriverOptions
+    private address: string
+    private conn: amqplib.Connection
+    private channel: amqplib.Channel
+    private receiveQueue: amqplib.Replies.AssertQueue
 
-    constructor(options: MQDriverOptions, serviceConfig: ServiceConfig){
+    private receiveDirectQueue: amqplib.Replies.AssertQueue;
+    private receiveDirectConsume: amqplib.Replies.Consume;
+    private name: string;
+    private pendingRequests: any;
+
+    
+
+    constructor(options: Options){
         super()
 
-        this.serviceInfoBuffer = Buffer.from(BJSON.stringify({
-            name: serviceConfig.name,
-            typeCount: serviceConfig.typeCount,
-            methods: serviceConfig.methods.map(m => {
-                return {
-                    name: m.name,
-                    typeCount: m.typeCount,
-                    type: m.type
-                }
-            })
-        }));
-        this.options = options;
-        this.serviceConfig = serviceConfig;
+        if(!options.mqDriverOptions){
+            console.error("No MQ options passed");
+        }
+        
+        this.options = options.mqDriverOptions;
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
 
-        if(typeof this.serviceConfig.name !== "string"){
-            console.error("invalid serviceName", this.serviceConfig.name);
+        if(this.name){
+            
+            this.name = name
+            console.log("RabbitMQ Driver using name:", name)
+            if(!options.serviceInfoBuffer){
+                console.error("Provided service name, but no serviceInfoBuffer")
+            }
+            this.serviceInfoBuffer = options.serviceInfoBuffer
         }
+
+        
     }
 
     async init(){
@@ -84,12 +115,48 @@ export class MQDriver extends EventEmitter{
         this.channel = await this.conn.createChannel();
         console.log("RabbitMQ connected");
         await this.channel.prefetch(this.options.prefetch || 10);
-        await this.createReceiveQueue();
+
+        if(this.name) {
+            console.log("RabbitMQ driver running for Service");
+            await this.createServiceReceiveQueue();
+        }
+        else {
+            console.log("RabbitMQ driver running for Connection")
+            await this.createDirectReceiveQueue();
+        }
+
         console.log("RabbitMQ receive queue connected")
         return this;
     }
 
-    async createReceiveQueue(){
+    private async createDirectReceiveQueue(){
+        console.log("MQ creating receive queue")
+        const gotResponse = (msg: amqplib.ConsumeMessage) => {
+            if(!this.pendingRequests[msg.properties.correlationId]){
+                console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
+                return;
+            }
+    
+            const requestObj = this.pendingRequests[msg.properties.correlationId];
+            delete this.pendingRequests[msg.properties.correlationId];
+
+            this.channel.ack(msg);
+
+            if(msg.properties.type === "error"){
+                requestObj.promiseReject(msg.content.toString);
+            }
+            requestObj.promiseResolve(msg.content);
+        }
+
+        this.receiveDirectQueue = await this.channel.assertQueue('', {
+            exclusive: true,
+            durable: true
+        })
+        this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
+        console.log("MQ receive queue created", this.receiveDirectQueue.queue)
+    }
+
+    private async createServiceReceiveQueue(){
         const gotMessage = (msg: amqplib.Message) => {
             
             console.log("MQ message", msg)
@@ -118,7 +185,7 @@ export class MQDriver extends EventEmitter{
         }
 
         console.log(1)
-        this.receiveQueue = await this.channel.assertQueue(`s:${this.serviceConfig.name}`, {
+        this.receiveQueue = await this.channel.assertQueue(`s:${this.name}`, {
             exclusive: false,
             durable: true
         })
@@ -142,7 +209,7 @@ export class MQDriver extends EventEmitter{
     private _handleMethodCall(msg: amqplib.Message, methodName: string) {
 
         if(!methodName){
-            console.error("attempted to call unknown method", msg, this.serviceConfig.methods);
+            console.error("methodCall has no methodName", msg);
             return;
         }
 
@@ -196,6 +263,61 @@ export class MQDriver extends EventEmitter{
     }
 
 
+    async sendRequestToService({serviceName, queueName, type, reqParams={}, options={}}: {serviceName?: string, queueName?:string, type: string, reqParams?: object, options?:amqplib.Options.Publish}){
+        let promiseResolve, promiseReject
+        let requestObj: RequestObject = {
+            requestQueue: serviceName,//TODO: get proper queue name
+            correlationId: uuid(),
+            reqParams,
+            responsePromise: new Promise((resolve, reject) => {
+                promiseResolve = resolve;
+                promiseReject = reject;
+            }),
+            promiseReject,
+            promiseResolve
+        }
+
+        options.correlationId = requestObj.correlationId;
+        options.replyTo = this.receiveDirectQueue.queue
+
+        await this.sendMessage({serviceName, queueName, type, reqParams, options})
+        this.pendingRequests[requestObj.correlationId] = requestObj;
+        return requestObj.responsePromise;
+
+    }
+
+    async queuesExists(queues: Array<string>) {
+        const sacrificialChannel = await this.conn.createChannel();
+        sacrificialChannel.on("error", (e) => {
+            console.log("got error on sacrificial channel", e)
+        })
+        try {
+            await Promise.all(queues.map((queue: string) => {
+                return sacrificialChannel.checkQueue(queue);
+            }))
+            sacrificialChannel.close();
+            return true;
+        }
+        catch(e) {
+            if(e.code !== 404) throw e;
+            return false;
+        }
+    }
+
+    async getServiceInfo(serviceName: string){
+        let res: Promise<Buffer> = await this.sendRequestToService({
+            serviceName, 
+            type: "info",
+            options: {
+                deliveryMode: true,
+                persistent: true
+            }
+         });
+         
+        return BJSON.parse(res.toString());
+    }
+
+
     async sendMessage({serviceName, queueName, type, reqParams={}, options={}}: {serviceName?: string, queueName?:string, type: string, reqParams?: object, options?:any}){
         
 
@@ -216,9 +338,6 @@ export class MQDriver extends EventEmitter{
 
         console.log("MQ message sent", arguments)
     }
-
-
-
 
 
 }

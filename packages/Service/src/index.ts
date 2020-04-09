@@ -1,9 +1,29 @@
 import path from "path"
 import BJSON from "json-buffer"
-import {MQDriver} from "./mqDriver"
-import {RedisDriver} from "./redisDriver"
-import {ServiceConfig} from "./typeDefs"
+import {MQDriver} from "@my/mqdriver"
+import {RedisDriver} from "@my/redisdriver"
 import uuid from "uuid"
+
+export interface ServiceConfig {
+    name: string,
+    plugins?: Array<PluginConfig>,
+    dependencies?: Array<string>,
+    methods: Array<MethodConfig>
+    typeCount?: number
+}
+
+export interface PluginConfig {
+    name: string,
+    src: string,
+    config: any
+}
+
+export interface MethodConfig {
+    name: string,
+    type?: string,
+    pluginConfig?: any,
+    typeCount?: number
+}
 
 const myId = uuid();
 const serviceConfig: ServiceConfig = require(path.join(__dirname, "service", "config.json"));
@@ -35,8 +55,22 @@ const main = async () => {
 
     const redisDriver = new RedisDriver(serviceConfig);
     const mqDriver = new MQDriver({
-        prefetch: 10
-    }, serviceConfig)
+        mqDriverOptions: {
+            prefetch: 10
+        },
+        name: serviceConfig.name,
+        serviceInfoBuffer: Buffer.from(BJSON.stringify({
+            name: serviceConfig.name,
+            typeCount: serviceConfig.typeCount,
+            methods: serviceConfig.methods.map(m => {
+                return {
+                    name: m.name,
+                    typeCount: m.typeCount,
+                    type: m.type
+                }
+            })
+        }))
+    })
     
 
     /*
@@ -46,7 +80,7 @@ const main = async () => {
         sendReply(buffer)
     }
     */
-    mqDriver.on("methodCall", async (msg, methodName, sendReply, sendError) => {
+    mqDriver.on("methodCall", async (msg: any, methodName: string, sendReply: any, sendError: any) => {
 
         const method = serviceConfig.methods.find(m => m.name === methodName);
         if(!method){

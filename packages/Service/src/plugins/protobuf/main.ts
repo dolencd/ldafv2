@@ -1,8 +1,35 @@
 import protobufjs from "protobufjs"
-import {ServiceConfig, PluginConfig, MethodConfig, MethodCallEvent} from "../../typeDefs"
 import path from "path";
-
 const projectRoot = path.join(path.dirname(require.main.filename), "service");
+let initialised = false;
+
+export interface MethodCallEvent {
+    payload: Buffer,
+    method: MethodConfig
+}
+
+export interface MethodConfig {
+    name: string,
+    type?: string,
+    pluginConfig?: any,
+    typeCount?: number
+}
+
+export interface ServiceConfig {
+    name: string,
+    plugins?: Array<PluginConfig>,
+    dependencies?: Array<string>,
+    methods: Array<MethodConfig>
+    typeCount?: number
+}
+
+export interface PluginConfig {
+    name: string,
+    src: string,
+    config: any
+}
+
+
 
 export interface MessageType {
     name: string,
@@ -45,7 +72,7 @@ export const init = async (config: ServiceConfig) => {
     const protobufConfig: ProtobufConfig = config.plugins.find(p => p.name === "protobuf")
 
     if(!protobufConfig || !protobufConfig.config || !protobufConfig.config.protoFiles){
-        throw new Error("missing proto files")
+        throw new Error("missing proto files config")
     }
 
     try {
@@ -56,7 +83,9 @@ export const init = async (config: ServiceConfig) => {
                     else resolve(res);
                 })
             })
-        }))
+        })).catch((e) => {
+            console.error("error reading proto files", e)
+        })
         console.log("proto files read")
         protoRoot.nestedArray.map((type: any) => {//TODO: find proper type
             
@@ -113,10 +142,20 @@ export const init = async (config: ServiceConfig) => {
         console.error("error loading protos", e)
     }
 
+    initialised = true;
+
+    return true;
+
 }
 
 export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (newCtx: object, responseBuffer: Buffer) => void) => {
 
+    if(!initialised){
+        console.error("Tried to apply plugin before initialising it")
+        return;
+    }
+
+    
     let method = methods[event.method.name];//method with added protobuf info
     if(!method) {
         return [event, context, callback];
@@ -131,7 +170,6 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
             console.error("error decoding message", event, method);
         }
     }
-
 
 
     return [

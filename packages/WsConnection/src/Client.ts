@@ -3,15 +3,8 @@ import uuid from "uuid";
 import WebSocket from "ws";
 import {ServerTranscoder, DecodedMessage} from "./ServerTranscoder";
 import {IncomingMessage} from "http"
+import {MessageType, ServiceInfo, ServiceInfoMethod} from "./index"
 
-import {ServiceInfo, ServiceInfoMethod} from "./mqDriver";
-
-export interface MessageType {
-    service: ServiceInfo,
-    method: ServiceInfoMethod
-    type: number,
-    offset: number
-}
 
 export class Client extends EventEmitter {
 

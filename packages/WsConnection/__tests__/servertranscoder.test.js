@@ -1,16 +1,12 @@
-console.log("start")
-import assert from "assert";
+'use strict';
 
-import {ServerTranscoder} from "./ServerTranscoder";
+const {ServerTranscoder} = require('../dist/ServerTranscoder');
 
-const testTranscoder = async () => {
-    
+describe('servertranscoder', () => {
 
     const serverTranscoder1 = new ServerTranscoder();
     const serverTranscoder2 = new ServerTranscoder(2,2);
     const serverTranscoder4 = new ServerTranscoder(4,4);
-
-
     const type1 = 97, seq1 = 23, buf1 = Buffer.from("000102030405060708090a0b0c0d0e0f10", "hex"), encoded1 = Buffer.from("6117000102030405060708090a0b0c0d0e0f10", "hex");
     const expectedResult = {
         type: type1,
@@ -26,27 +22,26 @@ const testTranscoder = async () => {
 
     const st2decoded = serverTranscoder2.decode(st2encoded);
     const st4decoded = serverTranscoder4.decode(st4encoded);
+    test("correct encoding with seq", () => {
+        expect(serverTranscoder1.encode(type1, seq1, buf1)).toEqual(encoded1)
+    })
 
+
+    test("decoding with seq", () => {
+        expect(serverTranscoder1.decode(encoded1)).toEqual({type: type1, seq: seq1, payload: buf1})
+    })
+
+    test("encoding without seq", () => {
+        expect(serverTranscoder1.encode(type2, seq2, buf2)).toEqual(encoded2)
+    })
+
+    test("typelen 2", () => {
+        expect(st2decoded).toEqual(expectedResult)
+        
+    })
     
-    assert.deepEqual(serverTranscoder1.encode(type1, seq1, buf1), encoded1, "wrong encoding with seq");
-    assert.deepEqual(serverTranscoder1.decode(encoded1), {type: type1, seq: seq1, payload: buf1}, "wrong decoding with seq");
+    test("typelen 4", () => {
+        expect(st4decoded).toEqual(expectedResult)
+    })
+});
 
-    assert.deepEqual(serverTranscoder1.encode(type2, seq2, buf2), encoded2, "wrong encoding without seq");
-
-    assert.deepEqual(st2decoded, expectedResult, "typeLen and seqLen 2 output did not match input")
-    assert.deepEqual(st4decoded, expectedResult, "typeLen and seqLen 4 output did not match input")
-
-    return true;
-}
-
-
-
-const test = async () => {
-    
-    console.log("test transcoder", await testTranscoder())
-
-    console.log("all tests complete")
-    return true;
-};
-
-test();

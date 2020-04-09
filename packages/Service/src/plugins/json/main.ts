@@ -1,4 +1,14 @@
-import {MethodCallEvent} from "../../typeDefs"
+export interface MethodCallEvent {
+    payload: Buffer,
+    method: MethodConfig
+}
+
+export interface MethodConfig {
+    name: string,
+    type?: string,
+    pluginConfig?: any,
+    typeCount?: number
+}
 
 interface JSONMethodCallEvent extends MethodCallEvent{
     params: object

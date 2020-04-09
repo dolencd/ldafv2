@@ -1,20 +1,18 @@
 {
   "dependencies": {
-    "amqplib": "^0.5.5",
-    "bufferutil": "^4.0.1",
+    "@my/mqdriver": "^0.1.1",
+    "@my/redisdriver": "^0.1.1",
     "eventemitter3": "^4.0.0",
-    "ioredis": "^4.14.1",
-    "json-buffer": "^3.0.1",
-    "utf-8-validate": "^5.0.2",
     "uuid": "^3.3.3",
     "ws": "^7.2.1"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.5.13",
-    "@types/ioredis": "^4.14.2",
+    "@types/jest": "^25.2.1",
     "@types/json-buffer": "^3.0.0",
+    "@types/node": "^13.11.0",
     "@types/uuid": "^3.4.6",
-    "@types/ws": "^6.0.4"
+    "@types/ws": "^6.0.4",
+    "jest": "^25.2.7"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.1",
@@ -23,13 +21,13 @@
   "name": "wsconnection",
   "version": "0.1.1",
   "description": "WebSocket server for LDAFv2",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "compile": "tsc",
-    "test": "node dist/test.js",
+    "test": "jest",
     "build": "docker build -t dolencd/ldafv2ws .",
     "push": "docker push dolencd/ldafv2ws",
-    "start": "node index.js"
+    "start": "node dist/index.js"
   },
   "author": "Dejan Dolenc",
   "license": "ISC"

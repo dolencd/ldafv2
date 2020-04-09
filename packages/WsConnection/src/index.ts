@@ -1,15 +1,38 @@
 import * as Ws from "ws";
-import {Client, MessageType} from "./Client"
-import {MQDriver, ServiceInfo} from "./mqDriver"
+import {Client} from "./Client"
+import {MQDriver} from "@my/mqdriver"
 import * as querystring from "querystring"
 import uuid from "uuid";
+
+export interface ServiceInfoMethod {
+    name: string;
+    type: string;
+    typeCount: number;
+}
+
+export interface ServiceInfo {
+    name: string;
+    typeCount: number;
+    methods: Array<ServiceInfoMethod>;
+}
+
+export interface MessageType {
+    service: ServiceInfo,
+    method: ServiceInfoMethod
+    type: number,
+    offset: number
+}
 
 const myId = uuid();
 const clients: { [k: string]: object } = {}
 
 const main = async () => {
 
-    const mqDriver = await (new MQDriver()).init();
+    const mqDriver = await (new MQDriver({
+        mqDriverOptions: {
+            prefetch: 10
+        }
+    })).init();
     const port = parseInt(process.env.WS_PORT) || 8547;
 
     const wsServer = new Ws.Server({
@@ -64,7 +87,7 @@ const main = async () => {
         client.on("methodCall", (messageType: MessageType, payload: Buffer, callback) => {
 
             if(messageType.method.type === "noRes"){
-                mqDriver.sendRequest.bind(mqDriver)({
+                mqDriver.sendRequestToService.bind(mqDriver)({
                     serviceName: messageType.service.name, 
                     reqParams: payload, 
                     type: "methodCall:" + messageType.method.name,
@@ -80,7 +103,7 @@ const main = async () => {
                 return;
             }
 
-            mqDriver.sendRequest.bind(mqDriver)({
+            mqDriver.sendRequestToService.bind(mqDriver)({
                 serviceName: messageType.service.name, 
                 reqParams: payload, 
                 type: "methodCall:" + messageType.method.name,
@@ -105,18 +128,6 @@ const main = async () => {
     wsServer.on("error", (error) => {
         console.error(error)
     })
-
-    setInterval(() => {
-        let memoryData = process.memoryUsage();
-        mqDriver.sendMessage({
-            queueName: "health",
-            type: "health",
-            options: {
-                appId: "ws-" + myId
-            },
-            reqParams: memoryData
-        })
-    }, 30000)
 }
 
 main();

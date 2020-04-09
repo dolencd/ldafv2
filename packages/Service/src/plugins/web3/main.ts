@@ -1,6 +1,27 @@
 import Web3 from "web3";
-import {MethodCallEvent, ServiceConfig} from "../../typeDefs";
 
+export interface ServiceConfig {
+    name: string,
+    plugins?: Array<PluginConfig>,
+    dependencies?: Array<string>,
+    methods: Array<MethodConfig>
+    typeCount?: number
+}
+export interface MethodConfig {
+    name: string,
+    type?: string,
+    pluginConfig?: any,
+    typeCount?: number
+}
+export interface MethodCallEvent {
+    payload: Buffer,
+    method: MethodConfig
+}
+export interface PluginConfig {
+    name: string,
+    src: string,
+    config: any
+}
 export interface Web3MethodCallEvent extends MethodCallEvent{
     params?: object
     web3?: Web3
