@@ -12,7 +12,7 @@ env:
 
 install:
   - npm i -g typescript lerna verdaccio
-  - verdaccio --config verdaccio.yaml
+  - verdaccio --config verdaccio.yaml &
   - lerna link
   - lerna bootstrap
   - lerna run compile
