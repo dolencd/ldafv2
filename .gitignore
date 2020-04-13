@@ -5,3 +5,4 @@ dist/
 node_modules/
 tsconfig.tsbuildinfo
 lerna-debug.log
+verdaccio_storage/

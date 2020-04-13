@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsc",
     "test": "jest",
-    "build": "docker build -t dolencd/ldafv2service .",
+    "build": "docker build -t dolencd/ldafv2service --network host .",
     "push": "docker push dolencd/ldafv2service",
     "start": "node index.js"
   },

@@ -2,8 +2,8 @@ FROM node:12
 
 WORKDIR /app
 COPY package.json package.json
-COPY /node_modules /node_modules
+COPY /dist .
 
-# RUN npm install --loglevel notice --production
+RUN npm install --loglevel notice --production --registry "http://localhost:4873"
 
 CMD ["npm", "start"]

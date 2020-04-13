@@ -22,22 +22,16 @@
   },
   "scripts": {
     "test": "jest",
-    "compile": "tsc"
+    "compile": "tsc",
+    "verdaccio_publish": "npm publish --repository=\"http://localhost:4873\""
   },
   "bugs": {
     "url": "https://github.com/dolencd/ldafv2/issues"
   },
   "dependencies": {
-    "@my/redisdriver": "^0.1.1",
-    "@types/node": "^13.11.0",
     "amqplib": "^0.5.5",
-    "big-number": "^2.0.0",
-    "bignumber": "^1.1.0",
-    "bignumber.js": "^9.0.0",
-    "bn.js": "^5.1.1",
     "eventemitter3": "^4.0.0",
-    "json-buffer": "^3.0.1",
-    "web3": "^1.2.6"
+    "json-buffer": "^3.0.1"
   },
   "devDependencies": {
     "@types/amqplib": "^0.5.13",

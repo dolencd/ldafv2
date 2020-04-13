@@ -11,13 +11,15 @@ env:
     - REDIS_PORT=6379
 
 install:
-  - npm i -g typescript lerna
+  - npm i -g typescript lerna verdaccio
+  - verdaccio --config verdaccio.yaml &
   - lerna link
   - lerna bootstrap
   - lerna run compile
 
 script: 
   - lerna run test
+  - lerna run verdaccio_publish
   - lerna run build
 
 
