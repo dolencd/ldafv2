@@ -4,6 +4,6 @@ WORKDIR /app
 COPY package.json package.json
 COPY /dist .
 
-RUN npm install --loglevel notice --production --registry "http://localhost:4873"
+RUN npm install --loglevel notice --production
 
 CMD ["npm", "start"]
