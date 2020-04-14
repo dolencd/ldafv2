@@ -7,9 +7,9 @@ node_js:
   - 12
 
 deploy:
-provider: npm
-    email: $EMAIL_ADDRESS
-    api_key: $NPM_AUTH_TOKEN
+    provider: npm
+        email: $EMAIL_ADDRESS
+        api_key: $NPM_AUTH_TOKEN
 
 env:
   global:
