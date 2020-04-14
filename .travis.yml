@@ -19,7 +19,6 @@ install:
 
 script: 
   - lerna run test
-  - lerna run verdaccio_publish
   - lerna run build
 
 
