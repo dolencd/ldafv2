@@ -1,7 +1,7 @@
 import path from "path"
 import BJSON from "json-buffer"
-import {MQDriver} from "@my/mqdriver"
-import {RedisDriver} from "@my/redisdriver"
+import {MQDriver} from "@ldafv2/mqdriver"
+import {RedisDriver} from "@ldafv2/redisdriver"
 import uuid from "uuid"
 
 export interface ServiceConfig {

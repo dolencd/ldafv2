@@ -1,6 +1,6 @@
 import * as Ws from "ws";
 import {Client} from "./Client"
-import {MQDriver} from "@my/mqdriver"
+import {MQDriver} from "@ldafv2/mqdriver"
 import * as querystring from "querystring"
 import uuid from "uuid";
 

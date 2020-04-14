@@ -5,14 +5,20 @@ services:
 language: node_js
 node_js:
   - 12
+
+deploy:
+provider: npm
+    email: $EMAIL_ADDRESS
+    api_key: $NPM_AUTH_TOKEN
+
 env:
   global:
     - REDIS_HOST=localhost
     - REDIS_PORT=6379
 
 install:
-  - npm i -g typescript lerna verdaccio
-  - verdaccio --config verdaccio.yaml &
+  - npm i -g typescript lerna
+  - travis setup npm
   - lerna link
   - lerna bootstrap
   - lerna run compile
@@ -20,6 +26,7 @@ install:
 script: 
   - lerna run test
   - lerna run verdaccio_publish
+  - lerna publish from-package
   - lerna run build
 
 

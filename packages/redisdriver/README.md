@@ -1,11 +1,11 @@
-# `@my/redisdriver`
+# `@ldafv2/redisdriver`
 
 > TODO: description
 
 ## Usage
 
 ```
-const redisdriver = require('@my/redisdriver');
+const redisdriver = require('@ldafv2/redisdriver');
 
 // TODO: DEMONSTRATE API
 ```

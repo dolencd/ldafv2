@@ -1,5 +1,5 @@
 {
-  "name": "@my/redisdriver",
+  "name": "@ldafv2/redisdriver",
   "version": "0.1.1",
   "description": "Redis driver for LDAFv2",
   "keywords": [
@@ -17,7 +17,8 @@
     "dist"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.com"
   },
   "repository": {
     "type": "git",
@@ -35,7 +36,6 @@
     "@types/jest": "^25.2.1",
     "@types/json-buffer": "^3.0.0",
     "@types/node": "^13.11.0",
-    "@types/uuid": "^7.0.2",
     "jest": "^25.2.7"
   },
   "dependencies": {

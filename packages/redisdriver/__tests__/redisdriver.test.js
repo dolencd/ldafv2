@@ -2,7 +2,7 @@
 
 const {RedisDriver} = require('../dist/redisDriver');
 
-describe('@my/redisdriver', () => {
+describe('@ldafv2/redisdriver', () => {
     const redisDriver = new RedisDriver({name: "test"});
     test("writing to redis should not reject", async () => {
 
