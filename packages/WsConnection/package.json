@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@ldafv2/mqdriver": "^0.1.1",
+    "@ldafv2/mqdriver": "^0.1.2",
     "eventemitter3": "^4.0.0",
     "uuid": "^3.3.3",
     "ws": "^7.2.1"
@@ -18,7 +18,7 @@
     "utf-8-validate": "^5.0.2"
   },
   "name": "wsconnection",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WebSocket server for LDAFv2",
   "main": "dist/index.js",
   "private": true,
