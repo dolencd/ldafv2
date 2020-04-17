@@ -124,16 +124,5 @@ const main = async () => {
     })
 
     await mqDriver.init()
-    setInterval(() => {
-        let memoryData = process.memoryUsage();
-        mqDriver.sendMessage({
-            queueName: "health",
-            type: "health",
-            options: {
-                appId: "sv-" + myId
-            },
-            reqParams: memoryData
-        })
-    }, 30000)
 }
 main();

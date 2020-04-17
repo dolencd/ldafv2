@@ -17,8 +17,7 @@
     "**/dist/**"
   ],
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com"
+    "access": "public"
   },
   "repository": {
     "type": "git",
@@ -41,5 +40,6 @@
   "dependencies": {
     "ioredis": "^4.16.1",
     "json-buffer": "^3.0.1"
-  }
+  },
+  "gitHead": "5e2bb3e21982905c211b786208cf84c77f2ad3be"
 }

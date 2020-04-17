@@ -19,7 +19,6 @@ install:
 
 script: 
   - lerna run test
-  - lerna publish from-package
   - lerna run build
 
 
