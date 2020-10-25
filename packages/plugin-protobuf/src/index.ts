@@ -76,7 +76,7 @@ export const init = async (config: ServiceConfig) => {
     try {
         await Promise.all(protobufConfig.config.protoFiles.map((protoFilePath: string) => {
             return new Promise((resolve, reject) => {
-                protoRoot.load(path.join(projectRoot, protoFilePath), (err, res) => {
+                protoRoot.load(path.join(projectRoot, protoFilePath), (err: Error, res: any) => {
                     if(err) reject(err)
                     else resolve(res);
                 })
