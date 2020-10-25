@@ -1,5 +1,6 @@
 {
     "name": "testService",
+    "src": "",
     "plugins": [
         {
             "name": "protobuf",

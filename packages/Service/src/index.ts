@@ -6,6 +6,7 @@ import uuid from "uuid"
 
 export interface ServiceConfig {
     name: string,
+    src?: string,
     plugins?: Array<PluginConfig>,
     dependencies?: Array<string>,
     methods: Array<MethodConfig>
@@ -14,7 +15,8 @@ export interface ServiceConfig {
 
 export interface PluginConfig {
     name: string,
-    src: string,
+    src_http?: string,
+    src_npm?: string,
     config: any
 }
 
