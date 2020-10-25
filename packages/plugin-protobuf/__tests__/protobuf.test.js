@@ -1,7 +1,7 @@
 
 'use strict';
 process.chdir("dist")
-const {init, applyPluginToMethodCall} = require("../dist/plugins/protobuf/main.js");
+const {init, applyPluginToMethodCall} = require("../dist/index.js");
 
 const testConfig = {
     "name": "adder",

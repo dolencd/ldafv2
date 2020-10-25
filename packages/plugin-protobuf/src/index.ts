@@ -29,8 +29,6 @@ export interface PluginConfig {
     config: any
 }
 
-
-
 export interface MessageType {
     name: string,
     type: protobufjs.ReflectionObject,

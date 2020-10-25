@@ -1,0 +1,42 @@
+{
+  "author": {
+    "name": "dolencd",
+    "email": "dejdolenc@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/dolencd/ldafv2/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "protobufjs": "^6.8.9"
+  },
+  "deprecated": false,
+  "description": "> TODO: description",
+  "devDependencies": {
+    "@types/node": "^13.13.0"
+  },
+  "directories": {
+    "dist": "dist",
+    "test": "__tests__"
+  },
+  "files": [
+    "dist",
+    "__tests__"
+  ],
+  "homepage": "https://github.com/dolencd/ldafv2#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "name": "@ldafv2/plugin-protobuf",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dolencd/ldafv2.git"
+  },
+  "scripts": {
+    "compile": "tsc",
+    "test": "jest"
+  },
+  "version": "0.1.2"
+}
