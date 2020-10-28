@@ -2,11 +2,12 @@ import path from "path"
 import BJSON from "json-buffer"
 import {MQDriver} from "@ldafv2/mqdriver"
 import {RedisDriver} from "@ldafv2/redisdriver"
+import {installService} from "./serviceLoader"
 import uuid from "uuid"
 
 export interface ServiceConfig {
     name: string,
-    src?: string,
+    src_http: string,
     plugins?: Array<PluginConfig>,
     dependencies?: Array<string>,
     methods: Array<MethodConfig>
@@ -27,33 +28,34 @@ export interface MethodConfig {
     typeCount?: number
 }
 
-const myId = uuid();
-const serviceConfig: ServiceConfig = require(path.join(__dirname, "service", "config.json"));
-serviceConfig.methods = serviceConfig.methods.map(method => {
-    return {
-        typeCount: method.type === "noRes" ? 1 : 2,
-        ...method
-    }
-})
-serviceConfig.typeCount = serviceConfig.methods.reduce((acc, curr) => {
-    return acc + curr.typeCount;
-}, 0)
-
-
-const getPluginArr = async (config: ServiceConfig) => {
-    const pluginNameArr: Array<string> = config.plugins.map(p => p.name);
-    return Promise.all(pluginNameArr.map(async (pluginName) => {
-        let plugin = require(path.join(__dirname, "plugins", pluginName, "main.js"));
-        plugin.init(config);
-        return plugin;
-    }))
-}
-
-
-
 const main = async () => {
-    const userService = require(path.join(__dirname, "service", "main.js"));
-    const plugins = await getPluginArr(serviceConfig);
+    
+    const myId = uuid();
+
+    if(!process.env.SRC_HTTP){
+        console.error("No Service source configuration. Please set SRC_HTTP. Exiting")
+        process.exit(1);
+    }
+
+    const {
+        serviceConfig,
+        service,
+        plugins}:
+        {
+            serviceConfig: ServiceConfig,
+            service: any,
+            plugins: any
+        } = await installService(process.env["SRC_HTTP"])
+
+    serviceConfig.methods = serviceConfig.methods.map(method => {
+        return {
+            typeCount: method.type === "noRes" ? 1 : 2,
+            ...method
+        }
+    })
+    serviceConfig.typeCount = serviceConfig.methods.reduce((acc, curr) => {
+        return acc + curr.typeCount;
+    }, 0)
 
     const redisDriver = new RedisDriver(serviceConfig);
     const mqDriver = new MQDriver({
@@ -74,7 +76,6 @@ const main = async () => {
         }))
     })
     
-
     /*
     {
         msg,
@@ -105,7 +106,7 @@ const main = async () => {
 
         let finalArguments
         try {
-            finalArguments = await plugins.reduce(async (accum, current) => {
+            finalArguments = await plugins.reduce(async (accum: any, current: any) => {
                 return current.applyPluginToMethodCall.apply(null, await accum);
             }, [{method, payload: msg.content}, ctx, (newCtx: object,response: Buffer) => {
                 if(newCtx) redisDriver.writeData(redisKey, newCtx) //intentionally not waiting for write to finish
@@ -122,7 +123,7 @@ const main = async () => {
             sendError(e)
         }
 
-        await userService[methodName].apply(null, finalArguments);
+        await service[methodName].apply(null, finalArguments);
     })
 
     await mqDriver.init()

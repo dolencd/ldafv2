@@ -16,16 +16,19 @@
   "dependencies": {
     "@ldafv2/mqdriver": "^0.1.2",
     "@ldafv2/redisdriver": "^0.1.2",
+    "download": "^8.0.0",
     "eventemitter3": "^4.0.0",
     "execa": "^4.0.3",
     "fs-extra": "^8.1.0",
     "json-buffer": "^3.0.1",
     "protobufjs": "^6.8.8",
-    "uuid": "^3.3.3",
-    "wget-improved": "^3.2.1"
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.15",
+    "@types/download": "^6.2.4",
     "@types/fs-extra": "^8.0.1",
+    "@types/ioredis": "^4.17.6",
     "@types/jest": "^25.2.1",
     "@types/json-buffer": "^3.0.0",
     "@types/node": "^13.11.0",

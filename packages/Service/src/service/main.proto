@@ -10,5 +10,5 @@ message hashDataRequest {
 }
 
 message hashDataResponse {
-    string hash = 1;
+    string hash = 1;Q
 }

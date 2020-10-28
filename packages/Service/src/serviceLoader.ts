@@ -1,86 +1,94 @@
 import { ServiceConfig } from ".";
 import execa from "execa";
-import * as wget from "wget-improved";
+import download from "download"
 import {join} from "path";
-import {ensureDir, unlink} from "fs-extra"
+import {ensureDir, pathExists, outputFile} from "fs-extra"
 
 const packagesDirPath = join(process.cwd(), "packages");
 const tmpDirPath = join(process.cwd(), "tmp")
 
-const installService = async (name: string, url: string) => {
-    let _: any = await fetchPackageHttp(name, url);
+export const installService = async (url: string): Promise<{serviceConfig: ServiceConfig, service: any, plugins: Array<any>}> => {
+    await Promise.all([
+        ensureDir(packagesDirPath),
+        ensureDir(tmpDirPath)
+    ])
+    // const {serviceConfig: ServiceConfig, servicePackage=package} = await fetchPackageHttp(name, url);
+    let _: any = await fetchPackageHttp("_service", url);
+    console.log("HTTP fetch done", _)
     const serviceConfig: ServiceConfig = _.serviceConfig;
-    const servicePackage = _.package;
+    const servicePackage: any = _.pkg;
+    
+    const installingPlugins = serviceConfig.plugins.map(async (pluginConfig) => {
+        if(pluginConfig.src_npm) {
+            return await fetchPackageNpm(pluginConfig.src_npm)
+        }
+        else if (pluginConfig.src_http) {
+            return (await fetchPackageHttp(pluginConfig.name, pluginConfig.src_http)).pkg
+        }
+    })
+    const plugins = await Promise.all(installingPlugins)
+    return {
+        serviceConfig,
+        service: servicePackage,
+        plugins
+    }
 }
 
-const fetchService = async (serviceConfig: ServiceConfig ) => {
-
+const fetchPackageHttp = async (name: string, src_http: string): Promise<{serviceConfig?: ServiceConfig, pkg: any}> => {
+    console.log("installing package from HTTP", name, src_http);
     try {
+        //TODO: ensure files don't get overwritten
+        const downloadFileName = join(tmpDirPath, name + ".tar.gz");
+        const packageDir = join(packagesDirPath, name);
         
+        const tarFile: Buffer = await download(src_http);
+        console.log("package downloaded");
+        await outputFile(downloadFileName, tarFile)
+        await ensureDir(packageDir)
+        const result_tar = await execa("tar", [
+            "-xzf",
+            downloadFileName,
+            "--strip-components",
+            "1",
+            "--directory",
+            packageDir
+        ])
 
-        if(serviceConfig.src_npm){
-
+        if(result_tar.exitCode !== 0){
+            throw result_tar;
         }
-        else {
-            
-            await Promise.all([
-                ensureDir(packagesDirPath),
-                ensureDir(tmpDirPath)
-            ])
 
-            if(serviceConfig.src_http){ 
+        const serviceConfigPath = join(packageDir,"config.json")
 
-            }
-            // else if (serviceConfig.src_git){
-            //TODO: add src_git
-            // }
-            else {
-                console.error("Invalid serviceConfig. Source not specified correctly")
-            }
+        console.log("HTTP package installed", name, src_http)
+
+        const result_npm = await execa("npm", ["install"], {
+            stdout: process.stdout,
+            stderr: process.stderr
+        });
+
+        if(result_npm.exitCode !== 0){
+            throw "HTTP failed to install dependencies" + result_npm;
         }
-    }
-    catch(e) {
-        console.error("Error fetching service", e);
-    }
-}
 
-const fetchPackageHttp = async (name: string, src_http: string,){
-    try {
-        const downloadFileName = join(tmpDirPath, name);
-        const packageDir = join(packagesDirPath, name)
-        const download = await wget.download(src_http, downloadFileName);
-        download.on("error", (err) => {
-            throw err
-        })
-
-        download.on("end", (output) => {
-            console.log("package downloaded", output);
-            const result = await execa("tar", [
-                "-xz",
-                "--file=" + downloadFileName, 
-                "strip-components=1",
-                "--directory=" + packageDir
-            ])
-
-            if(result.exitCode !== 0){
-                throw result;
-            }
-
-            return {
-                serviceConfig: await import(join(packageDir,"config.json")),
-                package: await import(packageDir),
-            }
-
-        })
+        const serviceConfig = (await pathExists(serviceConfigPath)) ? (await import(serviceConfigPath)) : null
+        console.log("serviceCondfig", name, serviceConfig)
+        const pkg = await import(packageDir);
+        console.log("package", name, pkg)
+        return {
+            serviceConfig,
+            pkg
+        }
         
     }   
-    catch (e: Error) {
+    catch (e) {
         console.error("failed to install package via http", e)
         return;
     }
 }
 
-const fetchPackageNpm = async (src_npm: string){
+const fetchPackageNpm = async (src_npm: string): Promise<any> => {
+    console.log("installing NPM package", src_npm)
     try {
         const result = await execa("npm", ["install", "--no-save", src_npm], {
             stdout: process.stdout,
@@ -90,10 +98,10 @@ const fetchPackageNpm = async (src_npm: string){
         if(result.exitCode !== 0){
             throw "failed to install NPM packages" + result;
         }
-
+        console.log("NPM package installed. Importing", src_npm)
         return await import(src_npm);
     }
-    catch (e: Error) {
+    catch (e) {
         console.error("failed to install package via http", e)
         return;
     }
