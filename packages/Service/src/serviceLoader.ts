@@ -80,7 +80,7 @@ const fetchPackageHttp = async (name: string, src_http: string): Promise<{servic
             pkg
         }
         
-    }   
+    }
     catch (e) {
         console.error("failed to install package via http", e)
         return;
