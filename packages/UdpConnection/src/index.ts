@@ -65,7 +65,7 @@ const main = async () => {
         if(smallId === 0 || !(await redisDriver.readData("" + smallId))){
 
             function getRandomInteger(min: number, max: number) {
-                return Math.random() * (max - min) + min;
+                return Math.floor(Math.random() * (max - min) + min);
             }
 
             for(let i = 1; i++; i <= 50) { //try up to X times

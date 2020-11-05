@@ -81,7 +81,9 @@ export class MQDriver extends EventEmitter{
         }
         
         this.options = options.mqDriverOptions;
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost"
+        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost";
+
+        this.pendingRequests = {};
 
         if(this.name){
             

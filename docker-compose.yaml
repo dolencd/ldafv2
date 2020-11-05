@@ -3,7 +3,10 @@ services:
     rabbit:
         image: rabbitmq:3-management
         ports:
-            - "15672:15672"
+            - target: 15672
+              published: 8080
+              protocol: tcp
+              mode: host
         networks:
             - main
 
@@ -15,7 +18,10 @@ services:
     udp:
         build: "./packages/UdpConnection"
         ports:
-            - "41234:41234/udp"
+            - target: 41234
+              published: 41234
+              protocol: udp
+              mode: host
         networks:
             - main
         depends_on:
