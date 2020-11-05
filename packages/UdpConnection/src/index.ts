@@ -53,7 +53,7 @@ const main = async () => {
     server.on('listening', () => {
         const address = server.address();
         console.log(`server listening ${address.address}:${address.port}`);
-        console.log(`forwarding service set to:`)
+        console.log(`forwarding service set to: ${process.env.UDP_FORWARDING_SERVICE}`)
     });
 
     server.on('message', async (msg, rinfo) => {
