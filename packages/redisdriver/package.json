@@ -1,12 +1,15 @@
 {
   "name": "@ldafv2/redisdriver",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "description": "Redis driver for LDAFv2",
   "keywords": [
     "Redis",
     "LDAF"
   ],
-  "author": "dolencd <dejdolenc@gmail.com>",
+  "author": {
+    "name":"dolencd",
+    "email":"dejdolenc@gmail.com"
+  },
   "homepage": "https://github.com/dolencd/ldafv2#readme",
   "license": "ISC",
   "main": "dist/redisDriver.js",
@@ -25,7 +28,8 @@
   },
   "scripts": {
     "test": "jest",
-    "compile": "tsc"
+    "compile": "tsc",
+    "publish": "npm run compile && npm run test && npm publish"
   },
   "bugs": {
     "url": "https://github.com/dolencd/ldafv2/issues"

@@ -27,6 +27,19 @@ describe('@ldafv2/redisdriver', () => {
         
         // redisDriver.redis.once("end", cb2);
 
+
+        const redisGlobalWriteDataPromise = redisDriver.writeData("abcd", 123)
+        expect(redisWriteDataPromise).resolves.toBeDefined()
+
+        await redisGlobalWriteDataPromise;
+
+        const redisGlobalReadPromise = redisDriver.readData("abcd")
+        expect(redisGlobalReadPromise).resolves.toBeDefined()
+
+        expect(await redisGlobalReadPromise).toBe(123);
+
+
+
         await redisDriver.close()
         
 

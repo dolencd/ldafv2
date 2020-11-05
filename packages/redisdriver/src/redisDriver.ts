@@ -7,11 +7,13 @@ export class RedisDriver {
     private host: string
     private port: number
     private name: string
+    private prefix: string
 
-    constructor({name}: {name: string}){
+    constructor({name, prefix}: {name?: string, prefix?: string}){
         this.host = process.env.REDIS_HOST || "localhost";
         this.port = parseInt(process.env.REDIS_PORT) || 6379;
-        this.name = name
+        this.name = name;
+        this.prefix = prefix ? prefix : `s:${name}`;
 
         console.log(`redis in service:${this.name} using host:${this.host} and port:${this.port}`);
 
@@ -49,7 +51,7 @@ export class RedisDriver {
     }
 
     private correctKey(key: string) {
-        return `s:${this.name}:${key}`
+        return `${this.prefix}:${key}`
     }
 
     async readData(key: string){
@@ -59,6 +61,15 @@ export class RedisDriver {
 
     async writeData(key: string, data: object){
         return this.redis.set(this.correctKey(key), BJSON.stringify(data));
+    }
+
+    async readDataGlobal(key: string){
+        let data = await this.redis.get(key)
+        return BJSON.parse(data)
+    }
+
+    async writeDataGlobal(key: string, data: object){
+        return this.redis.set(key, BJSON.stringify(data));
     }
 
     async close(){
