@@ -14,8 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ldafv2/mqdriver": "^0.1.2",
-    "@ldafv2/redisdriver": "^0.1.2",
+    "@ldafv2/mqdriver": "^0.2.4",
+    "@ldafv2/redisdriver": "^0.2.1",
     "download": "^8.0.0",
     "eventemitter3": "^4.0.0",
     "execa": "^4.0.3",

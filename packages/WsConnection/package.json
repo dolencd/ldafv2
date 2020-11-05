@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@ldafv2/mqdriver": "^0.1.2",
+    "@ldafv2/mqdriver": "^0.2.4",
     "eventemitter3": "^4.0.0",
     "uuid": "^3.3.3",
     "ws": "^7.2.1"

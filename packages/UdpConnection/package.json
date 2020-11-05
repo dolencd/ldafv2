@@ -9,7 +9,7 @@
     "ldafv2"
   ],
   "dependencies": {
-    "@ldafv2/mqdriver": "^0.2.3",
+    "@ldafv2/mqdriver": "^0.2.4",
     "@ldafv2/redisdriver": "^0.2.1"
   },
   "devDependencies": {
