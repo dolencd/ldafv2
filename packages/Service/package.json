@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "compile": "tsc",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "build": "docker build -t dolencd/ldafv2service --network host .",
     "push": "docker push dolencd/ldafv2service",
     "start": "node index.js"

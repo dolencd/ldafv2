@@ -13,11 +13,13 @@
   "deprecated": false,
   "description": "> TODO: description",
   "devDependencies": {
-    "@types/node": "^13.13.0"
+    "@types/node": "^13.13.0",
+    "jest": "^26.6.3"
   },
   "directories": {
     "dist": "dist",
-    "test": "__tests__"
+    "compile": "tsc",
+    "test": "jest"
   },
   "files": [
     "dist",
