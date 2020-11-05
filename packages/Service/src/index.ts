@@ -107,7 +107,7 @@ const main = async () => {
             return;
         }
 
-        const callMethodFromOtherService = _callMethodFromOtherService.bind(this, msg.properties.appId)
+        const callMethodFromOtherService = _callMethodFromOtherService.bind(mqDriver, msg.properties.appId)
 
         const redisKey = `${serviceConfig.name}:${msg.properties.appId}`;
 
