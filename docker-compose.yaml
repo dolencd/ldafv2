@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+    rabbit:
+        image: rabbitmq:3-management
+        ports:
+            - "15672:15672"
+        networks:
+            - main
+
+    redis:
+        image: "redis:alpine"
+        networks:  
+            - main
+
+    udp:
+        build: "./packages/UdpConnection"
+        ports:
+            - "41234:41234/udp"
+        networks:
+            - main
+        depends_on:
+            - redis
+            - rabbit
+        environment:
+            UDP_FORWARDING_SERVICE: test
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            RABBITMQ_ADDRESS: amqp://rabbit
+
+    service:
+        build: "./packages/Service"
+        depends_on:
+            - redis
+            - rabbit
+        environment:
+            SRC_HTTP: http://192.168.42.103:5000/testservice.tar.gz
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            RABBITMQ_ADDRESS: amqp://rabbit
+        networks:
+            - main
+
+    
+
+
+networks:
+    main:

@@ -1,6 +1,6 @@
-import * as Ws from "ws";
-import {Client} from "./Client"
-import {MQDriver} from "@ldafv2/mqdriver"
+import {MQDriver} from "@ldafv2/mqdriver";
+import {RedisDriver} from "@ldafv2/redisdriver"
+import {createSocket as dgramCreateSocket} from "dgram";
 
 export interface ServiceInfoMethod {
     name: string;
@@ -21,111 +21,83 @@ export interface MessageType {
     offset: number
 }
 
-const myId = uuid();
+const udpPort = Number.parseInt(process.env.UDP_PORT) || 41234
 const clients: { [k: string]: object } = {}
 
 const main = async () => {
 
-    const mqDriver = await (new MQDriver({
-        mqDriverOptions: {
-            prefetch: 10
-        }
-    })).init();
-    const port = parseInt(process.env.WS_PORT) || 8547;
+    if(!process.env.UDP_FORWARDING_SERVICE) {
+        throw new Error("No forwarding service specified UDP_FORWARDING_SERVICE=serviceName")
+    }
 
-    const wsServer = new Ws.Server({
-        clientTracking: true,
-        port
+    const redisDriver = new RedisDriver({
+        name: "udpConnection",
+        prefix: "c:udp"
     });
 
-    wsServer.on("connection", async (socket, request) => {
-
-        const queryParams = querystring.parse(request.url.substr(1));
-
-        let serviceNames: Array<string>;
-
-        if(Array.isArray(queryParams.s)){
-            serviceNames = queryParams.s;
+    const mqDriver = await (new MQDriver({
+        mqDriverOptions: {
+            prefetch: 10,
+            directReceiveQueueName: "udpConnection"
         }
-        else if (typeof queryParams.s === "string"){
-            serviceNames = [queryParams.s];
+    })).init();
+    
+    const server = dgramCreateSocket('udp4');
+
+    server.on('error', (err) => {
+        console.error(`server error:\n${err.stack}`);
+        server.close();
+        process.exit(1);
+    });
+
+    server.on('listening', () => {
+        const address = server.address();
+        console.log(`server listening ${address.address}:${address.port}`);
+        console.log(`forwarding service set to:`)
+    });
+
+    server.on('message', async (msg, rinfo) => {
+        if(msg.length < 1) {
+            console.error(`message too small ${rinfo.address}:${rinfo.port}`)
         }
-        else {
-            console.log("invalid querystring", request.url);
-            return;
-        }
+        let smallId = msg.readUInt8()
+        console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port} with smallId:${smallId}`);
+        if(smallId === 0 || !(await redisDriver.readData("" + smallId))){
 
-
-        let services: Array<ServiceInfo>;
-        try {
-
-            if(!mqDriver.queuesExists(serviceNames.map(serviceName => `s:${serviceName}`))) throw "missing service queues" 
-
-            services = await Promise.all(serviceNames.map((serviceName: string) => {
-                return mqDriver.getServiceInfo(serviceName);
-            }))
-        }
-        catch(e){
-            console.log("error retrieving service info", e);
-            return
-        }
-
-        console.log("got service infos for client", services)
-
-        const client = new Client(socket, services, request)
-        if(clients[client.id]){
-            console.error("uuid collision! closing client", clients, client)
-            client.close()
-            return;
-        }
-        clients[client.id] = client;
-        client.once("close", () => {
-            delete clients[client.id];
-        })
-        client.on("methodCall", (messageType: MessageType, payload: Buffer, callback) => {
-
-            if(messageType.method.type === "noRes"){
-                mqDriver.sendRequestToService.bind(mqDriver)({
-                    serviceName: messageType.service.name, 
-                    reqParams: payload, 
-                    type: "methodCall:" + messageType.method.name,
-                    options: {
-                        appId: client.id
-                    }
-                })
-                .catch((error: Error) => {
-                    console.error("mqDriver response error", error)
-                })
-                callback()
-
-                return;
+            function getRandomInteger(min: number, max: number) {
+                return Math.random() * (max - min) + min;
             }
 
-            mqDriver.sendRequestToService.bind(mqDriver)({
-                serviceName: messageType.service.name, 
-                reqParams: payload, 
-                type: "methodCall:" + messageType.method.name,
-                options: {
-                    appId: client.id,
-                    deliveryMode: true,
-                    persistent: true
-                }
-            })
-            .catch((error: Error) => {
-                console.error("mqDriver response error", error)
-            })
-            .then(callback)
-        }) 
-    })
+            for(let i = 1; i++; i <= 50) { //try up to X times
+                let intToTry = getRandomInteger(1, 255)
+                let targetInfo = await redisDriver.readData("" + intToTry)
+                if(targetInfo) continue;
+                smallId = intToTry;
+                await redisDriver.writeData("" + intToTry, {ip: rinfo.address, port: rinfo.port})
+                break;
+            }
 
+            if(smallId === 0){
+                console.error("No free smallId fount. can't accept new connection")
+                return;
+            }
+        }
 
-    wsServer.on("listening", () => {
-        console.log("WS lis tening on", port)
-    })
+        //at this point, the smallId should be valid
+        mqDriver.sendRequestToService({
+            serviceName: process.env.UDP_FORWARDING_SERVICE,
+            reqParams: msg.slice(1, 1),
+            type: "methodCall:handleMessage",
+            options: {
+                appId: "" + smallId,
+                deliveryMode: true,
+                persistent: true
+            }
+        })
 
-    wsServer.on("error", (error) => {
-        console.error(error)
-    })
+    });
+    
+    server.bind(udpPort);
 }
 
 main();

@@ -28,6 +28,8 @@ export interface MethodConfig {
     typeCount?: number
 }
 
+
+
 const main = async () => {
     
     const myId = uuid();
@@ -75,6 +77,18 @@ const main = async () => {
             })
         }))
     })
+
+    const _callMethodFromOtherService = (appId: string, serviceName: string, methodName: string, payload?: object) => 
+        mqDriver.sendRequestToService.bind(mqDriver)({
+            serviceName, 
+            reqParams: payload, 
+            type: "methodCall:" + methodName,
+            options: {
+                appId,
+                deliveryMode: true,
+                persistent: true
+            }
+        })
     
     /*
     {
@@ -85,13 +99,18 @@ const main = async () => {
     */
     mqDriver.on("methodCall", async (msg: any, methodName: string, sendReply: any, sendError: any) => {
 
+        
+
         const method = serviceConfig.methods.find(m => m.name === methodName);
         if(!method){
             console.error("unknown method", msg);
             return;
         }
-        
+
+        const callMethodFromOtherService = _callMethodFromOtherService.bind(this, msg.properties.appId)
+
         const redisKey = `${serviceConfig.name}:${msg.properties.appId}`;
+
         let ctx = {}
         try {
             if(msg.properties.appId){

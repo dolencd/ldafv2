@@ -1,6 +1,6 @@
 {
   "name": "@ldafv2/mqdriver",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "RabbitMQ driver for LDAFv2",
   "keywords": [
     "LDAF",
@@ -37,7 +37,8 @@
   "dependencies": {
     "amqplib": "^0.5.5",
     "eventemitter3": "^4.0.0",
-    "json-buffer": "^3.0.1"
+    "json-buffer": "^3.0.1",
+    "uuid": "^8.3.1"
   },
   "devDependencies": {
     "@types/amqplib": "^0.5.13",

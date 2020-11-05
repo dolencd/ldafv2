@@ -1,43 +1,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ldaf-ws
+  name: ldaf-udp
   labels:
-    app: ldaf-ws
+    app: ldaf-udp
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ws
+      app: udp
       loc: connection
   template:
     metadata:
       labels:
-        app: ws
+        app: udp
         loc: connection
     spec:
       containers:
-      - name: ldaf-ws
-        image: dolencd/ldafv2ws
+      - name: ldaf-udp
+        image: dolencd/ldafv2udp
         env: 
           - name: RABBITMQ_ADDRESS
             value: "amqp://rabbitmq-svc"
+          - name: REDIS_HOST
+            value: "redis_svc"
+          - name: UDP_FORWARDING_SERVICE
+            value: 
         resources:
           requests:
             memory: "256Mi"
             cpu: "100m"
         ports:
-        - containerPort: 8547
+        - containerPort: 41234
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ldaf-ws-lb
+  name: ldaf-udp-lb
 spec:
   selector:
-    app: ws
+    app: udp
     loc: connection
   ports:
-    - port: 8547
-      targetPort: 8547
+    - port: 41234
+      protocol: UDP
+      targetPort: 41234
   type: LoadBalancer

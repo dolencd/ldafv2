@@ -96,37 +96,46 @@ export class MQDriver extends EventEmitter{
         
     }
 
-    async init(){
-        console.log("MQ connecting to address", this.address)
-        this.conn = await amqplib.connect(this.address);
+    async init(): Promise<MQDriver>{
+        try {
+            console.log("MQ connecting to address", this.address)
+            this.conn = await amqplib.connect(this.address);
 
-        this.conn.on("close", () => {
-            console.log("MQ conn close")
-        })
-        this.conn.on("error", (e) => {
-            console.log("MQ conn error", e)
-        })
-        this.conn.on("blocked", (r) => {
-            console.log("MQ conn blocked", r)
-        })
-        this.conn.on("unblocked", () => {
-            console.log("MQ conn unblocked")
-        })
+            this.conn.on("close", () => {
+                console.log("MQ conn close")
+            })
+            this.conn.on("error", (e) => {
+                console.log("MQ conn error", e)
+            })
+            this.conn.on("blocked", (r) => {
+                console.log("MQ conn blocked", r)
+            })
+            this.conn.on("unblocked", () => {
+                console.log("MQ conn unblocked")
+            })
 
-        this.channel = await this.conn.createChannel();
-        console.log("RabbitMQ connected");
-        await this.channel.prefetch(this.options.prefetch || 10);
+            this.channel = await this.conn.createChannel();
+            console.log("RabbitMQ connected");
+            await this.channel.prefetch(this.options.prefetch || 10);
 
-        if(this.name) {
-            console.log("RabbitMQ driver running for Service");
-            await this.createServiceReceiveQueue();
+            if(this.name) {
+                console.log("RabbitMQ driver running for Service");
+                await this.createServiceReceiveQueue();
+            }
+            else {
+                console.log("RabbitMQ driver running for Connection")
+                await this.createDirectReceiveQueue();
+            }
+
+            console.log("RabbitMQ receive queue connected")
         }
-        else {
-            console.log("RabbitMQ driver running for Connection")
-            await this.createDirectReceiveQueue();
+        catch(e){
+            console.error("Error when initializing MQDriver", e)
+            await new Promise((resolve, reject) => {
+                setTimeout(resolve, 5000)
+            })
+            return await this.init()
         }
-
-        console.log("RabbitMQ receive queue connected")
         return this;
     }
 
