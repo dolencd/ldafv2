@@ -47,7 +47,8 @@ export interface ServiceInfoMethod {
 }
 
 export interface MQDriverOptions{
-    prefetch: number
+    prefetch: number,
+    directReceiveQueueName?: string
 }
 
 export interface Options {
@@ -131,6 +132,7 @@ export class MQDriver extends EventEmitter{
 
     private async createDirectReceiveQueue(){
         console.log("MQ creating receive queue")
+        if(this.options.directReceiveQueueName) console.log("using specified directReceiveQueueName: " + this.options.directReceiveQueueName)
         const gotResponse = (msg: amqplib.ConsumeMessage) => {
             if(!this.pendingRequests[msg.properties.correlationId]){
                 console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
@@ -148,8 +150,8 @@ export class MQDriver extends EventEmitter{
             requestObj.promiseResolve(msg.content);
         }
 
-        this.receiveDirectQueue = await this.channel.assertQueue('', {
-            exclusive: true,
+        this.receiveDirectQueue = await this.channel.assertQueue(this.options.directReceiveQueueName || '', {
+            exclusive: this.options.directReceiveQueueName ? false : true,
             durable: true
         })
         this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})

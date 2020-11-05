@@ -1,12 +1,15 @@
 {
   "name": "@ldafv2/mqdriver",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "description": "RabbitMQ driver for LDAFv2",
   "keywords": [
     "LDAF",
     "RabbitMQ"
   ],
-  "author": "dolencd <dejdolenc@gmail.com>",
+  "author": {
+    "name": "dolencd",
+    "email": "dejdolenc@gmail.com"
+  },
   "homepage": "https://github.com/dolencd/ldafv2#readme",
   "license": "ISC",
   "main": "dist/mqDriver.js",
@@ -26,7 +29,7 @@
   "scripts": {
     "test": "jest",
     "compile": "tsc",
-    "verdaccio_publish": "npm publish --repository=\"http://localhost:4873\""
+    "publish": "npm run compile && npm run test && npm publish"
   },
   "bugs": {
     "url": "https://github.com/dolencd/ldafv2/issues"
