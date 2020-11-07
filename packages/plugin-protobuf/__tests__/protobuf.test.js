@@ -11,7 +11,7 @@ const testConfig = {
             "src": "url? DB ID?",
             "config": {
                 "protoFiles": [
-                    "../test.proto"
+                    "../../../__tests__/test.proto"
                 ]
             }
         }

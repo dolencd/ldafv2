@@ -1,6 +1,6 @@
 import protobufjs from "protobufjs"
 import path from "path";
-const projectRoot = path.join(path.dirname(require.main.filename), "service");
+const projectRoot = path.join(process.cwd(), "packages", "_service");
 let initialised = false;
 
 export interface MethodCallEvent {
@@ -81,9 +81,7 @@ export const init = async (config: ServiceConfig) => {
                     else resolve(res);
                 })
             })
-        })).catch((e) => {
-            console.error("error reading proto files", e)
-        })
+        }))
         console.log("proto files read")
         protoRoot.nestedArray.map((type: any) => {//TODO: find proper type
             
