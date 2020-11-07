@@ -34,11 +34,6 @@ const main = async () => {
     
     const myId = uuid();
 
-    if(!process.env.SRC_HTTP){
-        console.error("No Service source configuration. Please set SRC_HTTP. Exiting")
-        process.exit(1);
-    }
-
     const {
         serviceConfig,
         service,
@@ -47,7 +42,7 @@ const main = async () => {
             serviceConfig: ServiceConfig,
             service: any,
             plugins: any
-        } = await installService(process.env["SRC_HTTP"])
+        } = await installService()
 
     serviceConfig.methods = serviceConfig.methods.map(method => {
         return {

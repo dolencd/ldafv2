@@ -2,39 +2,94 @@ import { ServiceConfig } from ".";
 import execa from "execa";
 import download from "download"
 import {join} from "path";
-import {ensureDir, pathExists, outputFile} from "fs-extra"
+import {ensureDir, pathExists, outputFile, unlink} from "fs-extra"
+import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
 
 const packagesDirPath = join(process.cwd(), "packages");
 const tmpDirPath = join(process.cwd(), "tmp")
 
-export const installService = async (url: string): Promise<{serviceConfig: ServiceConfig, service: any, plugins: Array<any>}> => {
+export const installService = async (): Promise<{serviceConfig: ServiceConfig, service: any, plugins: Array<any>}> => {
     await Promise.all([
         ensureDir(packagesDirPath),
         ensureDir(tmpDirPath)
     ])
-    // const {serviceConfig: ServiceConfig, servicePackage=package} = await fetchPackageHttp(name, url);
-    let _: any = await fetchPackageHttp("_service", url);
-    console.log("HTTP fetch done", _)
-    const serviceConfig: ServiceConfig = _.serviceConfig;
-    const servicePackage: any = _.pkg;
+
+    let packageDir: string;
+    if(process.env.SRC_HTTP) {
+        packageDir = await fetchPackageHttp("_service", process.env.SRC_HTTP);
+    }
+    else if (process.env.SRC_GIT) {
+        packageDir = await fetchPackageGit("_service", process.env.SRC_GIT);
+    }
+    else {
+        throw new Error("Service SRC not specified. Either SRC_HTTP or SRC_GIT environment variable must be used");
+    }
+    console.log("main package downloaded into", packageDir)
+
+    const {pkg, serviceConfig}: {pkg: any, serviceConfig: ServiceConfig} = await installDepsAndReturnPackage(packageDir)
     
+    return {
+        serviceConfig,
+        service: pkg,
+        plugins: await installPlugins(serviceConfig)
+    }
+}
+
+const installPlugins = async (serviceConfig: ServiceConfig) => {
     const installingPlugins = serviceConfig.plugins.map(async (pluginConfig) => {
         if(pluginConfig.src_npm) {
             return await fetchPackageNpm(pluginConfig.src_npm)
         }
         else if (pluginConfig.src_http) {
-            return (await fetchPackageHttp(pluginConfig.name, pluginConfig.src_http)).pkg
+            const installDir = await fetchPackageHttp(pluginConfig.name, pluginConfig.src_http)
+            return (await installDepsAndReturnPackage(installDir)).pkg
         }
     })
-    const plugins = await Promise.all(installingPlugins)
+    return await Promise.all(installingPlugins);
+}
+
+const installDepsAndReturnPackage = async (dir: string) => {
+    const serviceConfigPath = join(dir,"config.json")
+    const result_npm = await execa("npm", ["install"], {
+        localDir: dir,
+        stdout: process.stdout,
+        stderr: process.stderr
+    });
+
+    if(result_npm.exitCode !== 0){
+        throw `npm install failed to install dependencies for ${dir}  ${result_npm}`;
+    }
+
+    const serviceConfig = (await pathExists(serviceConfigPath)) ? (await import(serviceConfigPath)) : null
+    console.log("serviceCondfig", dir, serviceConfig)
+    const pkg = await import(dir);
+    console.log("package", dir, pkg)
     return {
         serviceConfig,
-        service: servicePackage,
-        plugins
+        pkg
     }
 }
 
-const fetchPackageHttp = async (name: string, src_http: string): Promise<{serviceConfig?: ServiceConfig, pkg: any}> => {
+const fetchPackageGit = async (name: string, src_git: string): Promise<string> => {
+    console.log("installing package from git", name, src_git)
+    const packageDir = join(packagesDirPath, name);
+    const options: SimpleGitOptions = {
+        baseDir: packagesDirPath,
+        binary: 'git',
+        maxConcurrentProcesses: 6,
+    };
+    const git: SimpleGit = simpleGit(options);
+
+    try {
+        await git.clone(src_git, name)
+        return packageDir
+    }
+    catch(e){
+        console.error("failed to clone git repo and install dependencies", e)
+    }
+}
+
+const fetchPackageHttp = async (name: string, src_http: string): Promise<string> => {
     console.log("installing package from HTTP", name, src_http);
     try {
         //TODO: ensure files don't get overwritten
@@ -53,33 +108,14 @@ const fetchPackageHttp = async (name: string, src_http: string): Promise<{servic
             "--directory",
             packageDir
         ])
+        unlink(downloadFileName) //this is a cleanup step and is not a dependency of any other process, therefore it is not necessary to wait for it to finish
 
         if(result_tar.exitCode !== 0){
             throw result_tar;
         }
-
-        const serviceConfigPath = join(packageDir,"config.json")
-
         console.log("HTTP package installed", name, src_http)
 
-        const result_npm = await execa("npm", ["install"], {
-            stdout: process.stdout,
-            stderr: process.stderr
-        });
-
-        if(result_npm.exitCode !== 0){
-            throw "HTTP failed to install dependencies" + result_npm;
-        }
-
-        const serviceConfig = (await pathExists(serviceConfigPath)) ? (await import(serviceConfigPath)) : null
-        console.log("serviceCondfig", name, serviceConfig)
-        const pkg = await import(packageDir);
-        console.log("package", name, pkg)
-        return {
-            serviceConfig,
-            pkg
-        }
-        
+        return packageDir
     }
     catch (e) {
         console.error("failed to install package via http", e)

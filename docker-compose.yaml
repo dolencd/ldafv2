@@ -28,7 +28,7 @@ services:
             - redis
             - rabbit
         environment:
-            UDP_FORWARDING_SERVICE: test
+            UDP_FORWARDING_SERVICE: testService
             REDIS_HOST: redis
             REDIS_PORT: 6379
             RABBITMQ_ADDRESS: amqp://rabbit
@@ -39,7 +39,7 @@ services:
             - redis
             - rabbit
         environment:
-            SRC_HTTP: http://192.168.42.103:5000/testservice.tar.gz
+            SRC_GIT: https://github.com/dolencd/ldafv2-testservice
             REDIS_HOST: redis
             REDIS_PORT: 6379
             RABBITMQ_ADDRESS: amqp://rabbit
