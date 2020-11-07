@@ -81,14 +81,13 @@ export class MQDriver extends EventEmitter{
         }
         
         this.options = options.mqDriverOptions;
+        this.name = options.name;
         this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost";
 
         this.pendingRequests = {};
 
         if(this.name){
-            
-            this.name = name
-            console.log("RabbitMQ Driver using name:", name)
+            console.log("RabbitMQ Driver using name:", this.name)
             if(!options.serviceInfoBuffer){
                 console.error("Provided service name, but no serviceInfoBuffer")
             }
