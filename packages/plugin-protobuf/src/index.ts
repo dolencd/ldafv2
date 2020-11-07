@@ -149,8 +149,7 @@ export const init = async (config: ServiceConfig) => {
 export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context: object, callback: (newCtx: object, responseBuffer: Buffer) => void) => {
 
     if(!initialised){
-        console.error("Tried to apply plugin before initialising it")
-        return;
+        throw new Error("Protobuf plugin applyToMethodCall called before the plugin was initialised");
     }
 
     
