@@ -2,13 +2,13 @@ import { ServiceConfig } from ".";
 import execa from "execa";
 import download from "download"
 import {join} from "path";
-import {ensureDir, pathExists, outputFile, unlink} from "fs-extra"
+import {ensureDir, outputFile, unlink} from "fs-extra"
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
 
 const packagesDirPath = join(process.cwd(), "packages");
 const tmpDirPath = join(process.cwd(), "tmp")
 
-export const installService = async (): Promise<{serviceConfig: ServiceConfig, service: any, plugins: Array<any>}> => {
+export const installService = async (): Promise<{serviceConfig: ServiceConfig, service: any, plugins: any}> => {
     await Promise.all([
         ensureDir(packagesDirPath),
         ensureDir(tmpDirPath)
@@ -25,13 +25,24 @@ export const installService = async (): Promise<{serviceConfig: ServiceConfig, s
         throw new Error("Service SRC not specified. Either SRC_HTTP or SRC_GIT environment variable must be used");
     }
     console.log("main package downloaded into", packageDir)
+    const serviceConfig = await import(join(packageDir,"config.json"))
+    console.log("serviceCondfig", serviceConfig)
 
-    const {pkg, serviceConfig}: {pkg: any, serviceConfig: ServiceConfig} = await installDepsAndReturnPackage(packageDir)
-    
+    const toReturn = await Promise.all([
+        installDepsAndReturnPackage(packageDir),
+        (async () => {
+            const plugins = await installPlugins(serviceConfig);
+            console.log("test", plugins)
+            await Promise.all(plugins.map(p => p.init(serviceConfig)))
+            return plugins
+        })()
+    ])
+    console.log("plugins", toReturn[1])
+
     return {
         serviceConfig,
-        service: pkg,
-        plugins: await installPlugins(serviceConfig)
+        service: toReturn[0],
+        plugins: toReturn[1]
     }
 }
 
@@ -45,11 +56,14 @@ const installPlugins = async (serviceConfig: ServiceConfig) => {
             return (await installDepsAndReturnPackage(installDir)).pkg
         }
     })
-    return await Promise.all(installingPlugins);
+
+    const toReturn = await Promise.all(installingPlugins);
+    console.log("install plugins return", toReturn)
+    return toReturn
 }
 
 const installDepsAndReturnPackage = async (dir: string) => {
-    const serviceConfigPath = join(dir,"config.json")
+    
     const result_npm = await execa("npm", ["install"], {
         localDir: dir,
         stdout: process.stdout,
@@ -60,14 +74,10 @@ const installDepsAndReturnPackage = async (dir: string) => {
         throw `npm install failed to install dependencies for ${dir}  ${result_npm}`;
     }
 
-    const serviceConfig = (await pathExists(serviceConfigPath)) ? (await import(serviceConfigPath)) : null
-    console.log("serviceCondfig", dir, serviceConfig)
+    
     const pkg = await import(dir);
     console.log("package", dir, pkg)
-    return {
-        serviceConfig,
-        pkg
-    }
+    return pkg
 }
 
 const fetchPackageGit = async (name: string, src_git: string): Promise<string> => {
@@ -196,7 +206,7 @@ const fetchPackageNpm = async (src_npm: string): Promise<any> => {
 //     return false;
 // }
 
-// export default async (serviceName: string) => {
+// export , t async (serviceName: string) => {
     
     
 //     const serviceInfoResponse = await fetch(`http://localhost:3000/service/${serviceName}`)

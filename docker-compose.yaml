@@ -28,7 +28,7 @@ services:
             - redis
             - rabbit
         environment:
-            UDP_FORWARDING_SERVICE: testService
+            UDP_FORWARDING_SERVICE: testservice
             REDIS_HOST: redis
             REDIS_PORT: 6379
             RABBITMQ_ADDRESS: amqp://rabbit

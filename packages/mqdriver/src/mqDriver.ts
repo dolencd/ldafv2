@@ -93,8 +93,6 @@ export class MQDriver extends EventEmitter{
             }
             this.serviceInfoBuffer = options.serviceInfoBuffer
         }
-
-        
     }
 
     async init(): Promise<MQDriver>{
