@@ -188,7 +188,7 @@ export class MQDriver extends EventEmitter{
             
             this.emit("responseToSend", {
                 corr: msg.properties.correlationId,
-                message: msg.content.buffer,
+                message: msg.content,
                 ack: () => {
                     console.log("sending ack")
                     this.channel.ack(msg)
@@ -271,7 +271,7 @@ export class MQDriver extends EventEmitter{
                     this.channel.ack(msg);
                 }
             )
-            
+            this.channel.ack(msg);
             return;
         }
 
