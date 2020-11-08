@@ -1,6 +1,6 @@
 {
   "name": "@ldafv2/mqdriver",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "RabbitMQ driver for LDAFv2",
   "keywords": [
     "LDAF",

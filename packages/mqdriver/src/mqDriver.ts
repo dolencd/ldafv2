@@ -3,27 +3,6 @@ import amqplib from "amqplib";
 import EventEmitter from "eventemitter3";
 import BJSON from "json-buffer";
 import {v4 as uuid} from "uuid";
-/*
-
-ws verzija
-
- - skupno
-  - narediti connection in channel
-
- - posiljanje requestov, ki cakajo na response
-  - send request proti servicu
-  - pending requests
-  - direct receive queue
-  - poiskati pending request in resolve promisa
-
- - service
-  - subscribe na primeren exchange
-  - consume messages
-  - pognat whatever
-  - poslat response (in ob tem ack requesta)
-
-
-*/
 
 export interface RequestObject {
     correlationId: string;
@@ -46,16 +25,42 @@ export interface ServiceInfoMethod {
     typeCount: number
 }
 
-export interface MQDriverOptions{
-    prefetch: number,
-    directReceiveQueueName?: string
+export interface MQOptions{
+    prefetch?: number,
+    address?: string,
 }
 
 export interface Options {
-    mqDriverOptions: MQDriverOptions,
+    mqDriverOptions: MQOptions,
     name?: string,
     serviceInfoBuffer?: Buffer
+    
 }
+
+type ServiceOptions = {
+    type: "Service",
+    name: string,
+    serviceInfoBuffer: Buffer,
+    mqOptions: MQOptions
+}
+
+type StatefulConnectioneOptions = {
+    type: "StatefulConnection",
+    name: string,
+    mqOptions: MQOptions
+}
+
+type StatelessConnectioneOptions = {
+    type: "StatelessConnection",
+    name: string,
+    mqOptions: MQOptions
+}
+
+export type MQDriverOptions =
+    | ServiceOptions
+    | StatefulConnectioneOptions
+    | StatelessConnectioneOptions
+
 
 export class MQDriver extends EventEmitter{
 
@@ -68,37 +73,38 @@ export class MQDriver extends EventEmitter{
 
     private receiveDirectQueue: amqplib.Replies.AssertQueue;
     private receiveDirectConsume: amqplib.Replies.Consume;
-    private name: string;
     private pendingRequests: any;
 
     
 
-    constructor(options: Options){
+    constructor(options: MQDriverOptions){
         super()
 
-        if(!options.mqDriverOptions){
-            console.error("No MQ options passed");
+        if(!options){
+            console.error("No MQDriverOptions passed");
         }
         
-        this.options = options.mqDriverOptions;
-        this.name = options.name;
-        this.address = process.env.RABBITMQ_ADDRESS || "amqp://localhost";
+        this.options = options;
 
-        this.pendingRequests = {};
+        if(!this.options.mqOptions) this.options.mqOptions = {}
 
-        if(this.name){
-            console.log("RabbitMQ Driver using name:", this.name)
-            if(!options.serviceInfoBuffer){
+        if(this.options.type === "Service"){
+            console.log("RabbitMQ Driver using name:", this.options.name)
+            if(!this.options.serviceInfoBuffer){
                 console.error("Provided service name, but no serviceInfoBuffer")
             }
-            this.serviceInfoBuffer = options.serviceInfoBuffer
+            this.serviceInfoBuffer = this.options.serviceInfoBuffer
+        }
+        else if (this.options.type === "StatefulConnection"){
+            this.pendingRequests = {}
         }
     }
 
     async init(): Promise<MQDriver>{
         try {
-            console.log("MQ connecting to address", this.address)
-            this.conn = await amqplib.connect(this.address);
+            const address = this.options.mqOptions.address || "amqp://localhost";
+            console.log("MQ connecting to address", address)
+            this.conn = await amqplib.connect(address);
 
             this.conn.on("close", () => {
                 console.log("MQ conn close")
@@ -115,32 +121,41 @@ export class MQDriver extends EventEmitter{
 
             this.channel = await this.conn.createChannel();
             console.log("RabbitMQ connected");
-            await this.channel.prefetch(this.options.prefetch || 10);
+            await this.channel.prefetch(this.options.mqOptions.prefetch || 10);
 
-            if(this.name) {
-                console.log("RabbitMQ driver running for Service");
-                await this.createServiceReceiveQueue();
-            }
-            else {
-                console.log("RabbitMQ driver running for Connection")
-                await this.createDirectReceiveQueue();
-            }
-
-            console.log("RabbitMQ receive queue connected")
         }
         catch(e){
-            console.error("Error when initializing MQDriver", e)
-            await new Promise((resolve, reject) => {
+            console.error("Error when connecting to RabbitMQ", e)
+            await new Promise((resolve) => {
                 setTimeout(resolve, 5000)
             })
             return await this.init()
         }
+
+        switch (this.options.type) {
+            case "Service":
+                console.log("RabbitMQ driver running for Service");
+                await this.createServiceReceiveQueue();
+                break;
+            
+            case "StatefulConnection":
+                console.log("RabbitMQ driver running for Stateful Connection")
+                await this.createStatefulReceiveQueue();
+                break;
+
+            case "StatelessConnection":
+                console.log("RabbitMQ driver running for Stateless Connection")
+                await this.createStatelessReceiveQueue();
+                break;
+            default:
+                //@ts-ignore
+                throw new Error("RabbitMQ driver received invalid type: " + this.options.type)
+        }
+        
         return this;
     }
 
-    private async createDirectReceiveQueue(){
-        console.log("MQ creating receive queue")
-        if(this.options.directReceiveQueueName) console.log("using specified directReceiveQueueName: " + this.options.directReceiveQueueName)
+    private async createStatefulReceiveQueue(){
         const gotResponse = (msg: amqplib.ConsumeMessage) => {
             if(!this.pendingRequests[msg.properties.correlationId]){
                 console.error("unknown correlationId. got response to unknown request", msg, this.pendingRequests);
@@ -158,12 +173,38 @@ export class MQDriver extends EventEmitter{
             requestObj.promiseResolve(msg.content);
         }
 
-        this.receiveDirectQueue = await this.channel.assertQueue(this.options.directReceiveQueueName || '', {
-            exclusive: this.options.directReceiveQueueName ? false : true,
+        this.receiveDirectQueue = await this.channel.assertQueue('', {
+            exclusive: true,
             durable: true
         })
         this.receiveDirectConsume = await this.channel.consume(this.receiveDirectQueue.queue, gotResponse, {})
         console.log("MQ receive queue created", this.receiveDirectQueue.queue)
+    }
+
+    private async createStatelessReceiveQueue(){
+        const gotMessage = (msg: amqplib.Message) => {
+            
+            console.log("MQ message", msg)
+            
+            this.emit("responseToSend", {
+                corr: msg.properties.correlationId,
+                message: msg.content.buffer,
+                ack: () => {
+                    console.log("sending ack")
+                    this.channel.ack(msg)
+                }
+            })
+        }
+        this.receiveQueue = await this.channel.assertQueue(`c:${this.options.name}`, {
+            exclusive: false,
+            durable: true
+        })
+        console.log("MQ stateless connection receive queue created")
+        this.receiveDirectConsume = await this.channel.consume(this.receiveQueue.queue, gotMessage, {
+            noAck: false,
+            exclusive: false
+        })
+        console.log("MQ stateless connection receive consume created")
     }
 
     private async createServiceReceiveQueue(){
@@ -194,17 +235,16 @@ export class MQDriver extends EventEmitter{
         
         }
 
-        console.log(1)
-        this.receiveQueue = await this.channel.assertQueue(`s:${this.name}`, {
+        this.receiveQueue = await this.channel.assertQueue(`s:${this.options.name}`, {
             exclusive: false,
             durable: true
         })
-        console.log(2)
+        console.log("MQ service receive queue created")
         this.receiveDirectConsume = await this.channel.consume(this.receiveQueue.queue, gotMessage, {
             noAck: false,
             exclusive: false
         })
-        console.log(3)
+        console.log("MQ service receive consume created")
     }
 
     private _handleInfoCall(msg: amqplib.Message) {
