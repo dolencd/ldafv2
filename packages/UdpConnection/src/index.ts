@@ -36,9 +36,11 @@ const main = async () => {
     });
 
     const mqDriver = await (new MQDriver({
-        mqDriverOptions: {
+        type: "StatelessConnection",
+        name: "udp",
+        mqOptions: {
             prefetch: 10,
-            directReceiveQueueName: "udpConnection"
+            address: process.env.RABBITMQ_ADDRESS
         }
     })).init();
     
@@ -84,18 +86,35 @@ const main = async () => {
         }
 
         //at this point, the smallId should be valid
-        mqDriver.sendRequestToService({
+        mqDriver.sendMessage({
             serviceName: process.env.UDP_FORWARDING_SERVICE,
-            reqParams: msg.slice(1, 1),
+            reqParams: msg.slice(1),
             type: "methodCall:handleMessage",
             options: {
                 appId: "" + smallId,
+                correlationId: "" + smallId,
+                replyTo: "c:udp",//TODO: move more of this logic to mqDriver
                 deliveryMode: true,
                 persistent: true
             }
         })
 
     });
+    mqDriver.on("responseToSend", async ({corr, message, ack}: {corr: string, message: Buffer, ack: () => void}) => {
+        const responseTarget = await redisDriver.readData(corr)
+        if(!responseTarget){
+            console.error("UDP received response from MQ, but has no response target address. ignoring it.");
+            ack()
+        }
+
+        server.send(message, responseTarget.port, responseTarget.address, (err) => {
+            if(err) {
+                console.error("failed to send response", err);
+                return;
+            }
+            ack()
+        })
+    })
     
     server.bind(udpPort);
 }

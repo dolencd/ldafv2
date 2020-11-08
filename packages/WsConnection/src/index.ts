@@ -29,8 +29,11 @@ const clients: { [k: string]: object } = {}
 const main = async () => {
 
     const mqDriver = await (new MQDriver({
-        mqDriverOptions: {
-            prefetch: 10
+        type: "StatefulConnection",
+        name: "ws",
+        mqOptions: {
+            prefetch: 10,
+            address: process.env.RABBITMQ_ADDRESS
         }
     })).init();
     const port = parseInt(process.env.WS_PORT) || 8547;

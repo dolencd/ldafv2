@@ -56,9 +56,11 @@ const main = async () => {
 
     const redisDriver = new RedisDriver(serviceConfig);
     const mqDriver = new MQDriver({
-        mqDriverOptions: {
-            prefetch: 10
+        mqOptions: {
+            prefetch: 10,
+            address: process.env.RABBITMQ_ADDRESS
         },
+        type: "Service",
         name: serviceConfig.name,
         serviceInfoBuffer: Buffer.from(BJSON.stringify({
             name: serviceConfig.name,
@@ -92,7 +94,7 @@ const main = async () => {
         sendReply(buffer)
     }
     */
-    mqDriver.on("methodCall", async (msg: any, methodName: string, sendReply: any, sendError: any) => {
+    mqDriver.on("methodCall", async (msg, methodName: string, sendReply: any, sendError: any) => {
 
         
 
