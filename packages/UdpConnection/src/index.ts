@@ -59,11 +59,13 @@ const main = async () => {
     });
 
     server.on('message', async (msg, rinfo) => {
-        if(msg.length < 1) {
+        if(msg.length < 2) {
             console.error(`message too small ${rinfo.address}:${rinfo.port}`)
+            return;
         }
-        let smallId = msg.readUInt8()
-        console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port} with smallId:${smallId}`);
+        let smallId = msg.readUInt16LE()
+        const msgContent = msg.slice(2)
+        console.log(`server got: ${msgContent} from ${rinfo.address}:${rinfo.port} with smallId:${smallId}`);
         if(smallId === 0 || !(await redisDriver.readData("" + smallId))){
 
             function getRandomInteger(min: number, max: number) {
@@ -71,15 +73,15 @@ const main = async () => {
             }
 
             for(let i = 1; i++; i <= 50) { //try up to X times
-                let intToTry = getRandomInteger(1, 255)
+                let intToTry = getRandomInteger(1, 65534)
                 let targetInfo = await redisDriver.readData("" + intToTry)
                 if(targetInfo) continue;
                 smallId = intToTry;
-                await redisDriver.writeData("" + intToTry, {ip: rinfo.address, port: rinfo.port})
+                await redisDriver.writeData("" + intToTry, {address: rinfo.address, port: rinfo.port})
                 break;
             }
 
-            if(smallId === 0){
+            if(smallId === 65535){
                 console.error("No free smallId fount. can't accept new connection")
                 return;
             }
@@ -88,7 +90,7 @@ const main = async () => {
         //at this point, the smallId should be valid
         mqDriver.sendMessage({
             serviceName: process.env.UDP_FORWARDING_SERVICE,
-            reqParams: msg.slice(1),
+            reqParams: msgContent,
             type: "methodCall:handleMessage",
             options: {
                 appId: "" + smallId,
@@ -101,13 +103,16 @@ const main = async () => {
 
     });
     mqDriver.on("responseToSend", async ({corr, message, ack}: {corr: string, message: Buffer, ack: () => void}) => {
-        const responseTarget = await redisDriver.readData(corr)
+        const responseTarget: {address: string, port: number} = await redisDriver.readData(corr)
         if(!responseTarget){
             console.error("UDP received response from MQ, but has no response target address. ignoring it.");
             ack()
         }
-
-        server.send(message, responseTarget.port, responseTarget.address, (err) => {
+        const corrBuf = Buffer.alloc(2);
+        corrBuf.writeUInt16LE(Number.parseInt(corr))
+        const messageToSend = Buffer.concat([corrBuf, message])
+        console.log("sending response message", responseTarget, messageToSend)
+        server.send(messageToSend, responseTarget.port, responseTarget.address, (err) => {
             if(err) {
                 console.error("failed to send response", err);
                 return;

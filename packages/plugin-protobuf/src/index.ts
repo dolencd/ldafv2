@@ -159,7 +159,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
     let params;
     if(method.inputSchema){
         try {
-            params = method.inputSchema.decode(event.payload)
+            params = method.inputSchema.decode(event.payload) || {}
         }
         catch(e) {
             console.error("error decoding message", event, method);

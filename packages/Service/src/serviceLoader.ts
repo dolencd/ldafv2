@@ -4,6 +4,7 @@ import download from "download"
 import {join} from "path";
 import {ensureDir, outputFile, unlink} from "fs-extra"
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
+import * as util from "util";
 
 const packagesDirPath = join(process.cwd(), "packages");
 const tmpDirPath = join(process.cwd(), "tmp")
@@ -25,8 +26,8 @@ export const installService = async (): Promise<{serviceConfig: ServiceConfig, s
         throw new Error("Service SRC not specified. Either SRC_HTTP or SRC_GIT environment variable must be used");
     }
     console.log("main package downloaded into", packageDir)
-    const serviceConfig = await import(join(packageDir,"config.json"))
-    console.log("serviceCondfig", serviceConfig)
+    const serviceConfig: ServiceConfig = JSON.parse(JSON.stringify(await import(join(packageDir,"config.json"))))
+    console.log("serviceCondfig", util.inspect(serviceConfig))
 
     const toReturn = await Promise.all([
         installDepsAndReturnPackage(packageDir),
@@ -63,9 +64,7 @@ const installPlugins = async (serviceConfig: ServiceConfig) => {
 }
 
 const installDepsAndReturnPackage = async (dir: string) => {
-    
-    const result_npm = await execa("npm", ["install"], {
-        localDir: dir,
+    const result_npm = await execa("npm", ["install", "--no-audit", "--only=prod", dir], { //TODO ne najde pravilno package.json
         stdout: process.stdout,
         stderr: process.stderr
     });
@@ -136,7 +135,7 @@ const fetchPackageHttp = async (name: string, src_http: string): Promise<string>
 const fetchPackageNpm = async (src_npm: string): Promise<any> => {
     console.log("installing NPM package", src_npm)
     try {
-        const result = await execa("npm", ["install", "--no-save", src_npm], {
+        const result = await execa("npm", ["install", "--no-save", "--no-audit", "--only=prod", src_npm], {
             stdout: process.stdout,
             stderr: process.stderr
         });
