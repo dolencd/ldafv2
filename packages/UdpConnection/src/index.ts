@@ -63,29 +63,39 @@ const main = async () => {
             console.error(`message too small ${rinfo.address}:${rinfo.port}`)
             return;
         }
-        let smallId = msg.readUInt16LE()
+        let smallId = msg.readUInt16BE()
         const msgContent = msg.slice(2)
-        console.log(`server got: ${msgContent} from ${rinfo.address}:${rinfo.port} with smallId:${smallId}`);
-        if(smallId === 0 || !(await redisDriver.readData("" + smallId))){
+        console.log(`server got: ${msg.toString("hex")} from ${rinfo.address}:${rinfo.port} with smallId:${smallId}`);
+        let savedAddr = await redisDriver.readData("" + smallId);
+        if(smallId === 0 || !(savedAddr)){
 
             function getRandomInteger(min: number, max: number) {
                 return Math.floor(Math.random() * (max - min) + min);
             }
 
-            for(let i = 1; i++; i <= 50) { //try up to X times
-                let intToTry = getRandomInteger(1, 65534)
+            for(let i = 1; i++; i <= 100) { //try up to X times
+                let intToTry = getRandomInteger(1, 65535)
                 let targetInfo = await redisDriver.readData("" + intToTry)
                 if(targetInfo) continue;
                 smallId = intToTry;
-                await redisDriver.writeData("" + intToTry, {address: rinfo.address, port: rinfo.port})
+                savedAddr = {address: rinfo.address, port: rinfo.port}
+                await redisDriver.writeData("" + intToTry, savedAddr)
+                
                 break;
             }
 
-            if(smallId === 65535){
-                console.error("No free smallId fount. can't accept new connection")
+            if(smallId === 0) {
+                console.error("failed to get smallId. can't accept new connection")
                 return;
             }
+
         }
+
+        if(savedAddr.port !== rinfo.port || savedAddr.address !== rinfo.address){
+            await redisDriver.writeData("" + smallId, {address: rinfo.address, port: rinfo.port})
+            console.log(`port or address changed for smallId:${smallId}. New values written`)
+        }
+
 
         //at this point, the smallId should be valid
         mqDriver.sendMessage({
@@ -109,7 +119,7 @@ const main = async () => {
             ack()
         }
         const corrBuf = Buffer.alloc(2);
-        corrBuf.writeUInt16LE(Number.parseInt(corr))
+        corrBuf.writeUInt16BE(Number.parseInt(corr))
         const messageToSend = Buffer.concat([corrBuf, message])
         console.log("sending response message", responseTarget, messageToSend)
         server.send(messageToSend, responseTarget.port, responseTarget.address, (err) => {

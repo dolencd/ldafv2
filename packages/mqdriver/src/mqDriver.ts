@@ -184,13 +184,13 @@ export class MQDriver extends EventEmitter{
     private async createStatelessReceiveQueue(){
         const gotMessage = (msg: amqplib.Message) => {
             
-            console.log("MQ message", msg)
+            console.log(`MQ message routingKey:${msg.fields.routingKey}" length:${msg.content.length} corrId:${msg.properties.correlationId}`)
             
             this.emit("responseToSend", {
                 corr: msg.properties.correlationId,
                 message: msg.content,
                 ack: () => {
-                    console.log("sending ack")
+                    console.log("MQ sending ack")
                     this.channel.ack(msg)
                 }
             })
@@ -210,7 +210,7 @@ export class MQDriver extends EventEmitter{
     private async createServiceReceiveQueue(){
         const gotMessage = (msg: amqplib.Message) => {
             
-            console.log("MQ message", msg)
+            console.log(`MQ message routingKey:${msg.fields.routingKey} replyTo: ${msg.properties.replyTo} type:${msg.properties.type} length:${msg.content.length} corrId:${msg.properties.correlationId}`)
             
             try {
                 msg.content = BJSON.parse(msg.content.toString());
@@ -375,9 +375,9 @@ export class MQDriver extends EventEmitter{
         options.type = type;
 
         const queue = queueName || `s:${serviceName}`
-
+        const body = Buffer.from(BJSON.stringify(reqParams))
         try{
-            let ok = this.channel.sendToQueue(queue, Buffer.from(BJSON.stringify(reqParams)), options)
+            let ok = this.channel.sendToQueue(queue, body, options)
             if(!ok){
                 console.log("publish returned false");
             }
@@ -386,7 +386,7 @@ export class MQDriver extends EventEmitter{
             console.error("channel publish error", e)
         }
 
-        console.log("MQ message sent", arguments)
+        console.log(`MQ message sent to: ${queue} corrId: ${options.correlationId} length: ${body.length}`)
     }
 
 

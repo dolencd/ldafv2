@@ -112,7 +112,7 @@ const main = async () => {
         try {
             if(msg.properties.appId){
                 let _ctx = await redisDriver.readData(redisKey)
-                console.log("redis ctx", _ctx)
+                // console.log("redis ctx", _ctx)
                 if(_ctx) ctx = _ctx;
             }
         }
