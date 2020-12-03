@@ -1,7 +1,7 @@
 version: '3.8'
 services:
     rabbit:
-        image: rabbitmq:3-management
+        image: rabbitmq:3
         ports:
             - target: 15672
               published: 8080
@@ -28,7 +28,7 @@ services:
             - redis
             - rabbit
         environment:
-            UDP_FORWARDING_SERVICE: testservice
+            UDP_FORWARDING_SERVICE: nidd
             REDIS_HOST: redis
             REDIS_PORT: 6379
             RABBITMQ_ADDRESS: amqp://rabbit
@@ -39,7 +39,7 @@ services:
             - redis
             - rabbit
         environment:
-            SRC_GIT: https://github.com/dolencd/ldafv2-testservice
+            SRC_GIT: https://tsnidd:mC62^Kyt@git.ltfe.org/dejandolenc/nidd-service
             REDIS_HOST: redis
             REDIS_PORT: 6379
             RABBITMQ_ADDRESS: amqp://rabbit

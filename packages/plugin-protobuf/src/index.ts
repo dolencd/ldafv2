@@ -156,7 +156,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
         return [event, context, callback];
     }
 
-    let params;
+    let params = {};
     if(method.inputSchema){
         try {
             params = method.inputSchema.decode(event.payload) || {}
@@ -170,7 +170,7 @@ export const applyPluginToMethodCall = (event: ProtobufMethodCallEvent, context:
     return [
         {
             ...event,
-            params //is undefined if method is unknown
+            params //is empty object if method is unknown or decode fails
         },
         context,
             method.outputSchema ? (newCtx: object, responseObj: object) => {
