@@ -124,7 +124,7 @@ const main = async () => {
         try {
             finalArguments = await plugins.reduce(async (accum: any, current: any) => {
                 return current.applyPluginToMethodCall.apply(null, await accum);
-            }, [{method, payload: msg.content}, ctx, (newCtx: object,response: Buffer) => {
+            }, [{method, payload: msg.content || Buffer.from("")}, ctx, (newCtx: object,response: Buffer) => {
                 if(newCtx) redisDriver.writeData(redisKey, newCtx) //intentionally not waiting for write to finish
                 .catch((err: Error) => {
                     console.error("redis write rejected", err);
