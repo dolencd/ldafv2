@@ -35,7 +35,7 @@
     "url": "https://github.com/dolencd/ldafv2/issues"
   },
   "dependencies": {
-    "amqplib": "^0.5.5",
+    "amqplib": "^0.7.1",
     "eventemitter3": "^4.0.0",
     "json-buffer": "^3.0.1",
     "uuid": "^8.3.1"
