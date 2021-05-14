@@ -82,7 +82,7 @@ const installDepsAndReturnPackage = async (dir: string) => {
 const fetchPackageGit = async (name: string, src_git: string): Promise<string> => {
     console.log("installing package from git", name, src_git)
     const packageDir = join(packagesDirPath, name);
-    const options: SimpleGitOptions = {
+    const options: Partial<SimpleGitOptions> = {
         baseDir: packagesDirPath,
         binary: 'git',
         maxConcurrentProcesses: 6,
