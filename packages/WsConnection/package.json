@@ -3,7 +3,7 @@
     "@ldafv2/mqdriver": "^0.3.1",
     "eventemitter3": "^4.0.0",
     "uuid": "^3.3.3",
-    "ws": "^7.2.1"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "@types/amqplib": "^0.5.15",
